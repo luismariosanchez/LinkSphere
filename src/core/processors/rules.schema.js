@@ -47,3 +47,14 @@ export function parseRuleId(id) {
 
   return { type: match[1], index: Number(match[2]) };
 }
+
+function trimRule(value) {
+  return String(value ?? '').trim();
+}
+
+export function sanitizeKeywordRules(rules, valueKey) {
+  return (rules ?? []).map((rule) => ({
+    match: trimRule(rule.match),
+    [valueKey]: trimRule(rule[valueKey]),
+  })).filter((rule) => rule.match && rule[valueKey]);
+}

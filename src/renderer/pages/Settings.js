@@ -235,6 +235,38 @@ export function Settings({ onDataChanged }) {
       </section>
 
       <section className="panel settings-panel">
+        <h2 className="settings-panel__title">Processors</h2>
+        <p className="muted settings-panel__desc">
+          Activa o desactiva módulos de sugerencias en la pipeline
+        </p>
+
+        {[
+          { id: 'live', label: 'Live', hint: 'Detección de streams en vivo' },
+          { id: 'tag', label: 'Tags', hint: 'Sugerencias de tags por reglas' },
+          { id: 'folder', label: 'Folders', hint: 'Sugerencias de carpetas por reglas' },
+        ].map(({ id, label, hint }) => (
+          <label key={id} className="settings-row">
+            <span>
+              <strong>{label}</strong>
+              <span className="muted settings-row__hint">{hint}</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={(settings.enabledProcessors ?? []).includes(id)}
+              disabled={saving || transferLoading}
+              onChange={() => {
+                const current = settings.enabledProcessors ?? [];
+                const next = current.includes(id)
+                  ? current.filter((name) => name !== id)
+                  : [...current, id];
+                void handleChange({ enabledProcessors: next });
+              }}
+            />
+          </label>
+        ))}
+      </section>
+
+      <section className="panel settings-panel">
         <h2 className="settings-panel__title">Rules Editor</h2>
         <p className="muted settings-panel__desc">
           Define keywords para sugerir tags y carpetas al crear o editar bookmarks

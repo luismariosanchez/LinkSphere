@@ -1,13 +1,20 @@
 import path from 'node:path';
 import { app } from 'electron';
 import { BookmarkService } from '../../core/bookmarks/bookmark.service.js';
-import { initDebugLogger, RulesRepository, RulesService, SettingsService } from '../../core/config/index.js';
+import { initDebugLogger, SettingsService } from '../../core/config/index.js';
 import {
   closeDatabase,
   createRepositories,
   getDatabase,
   wipeAllData,
 } from '../../core/database/index.js';
+import {
+  bootstrapDefaultProcessors,
+  FolderProcessor,
+  ProcessorRulesService,
+  ProcessorsRegistry,
+  TagProcessor,
+} from '../../core/processors/index.js';
 import { ProviderManager } from '../../core/providers/provider-manager.js';
 import { SchedulerService } from '../../core/scheduler/scheduler.service.js';
 import { WatcherService } from '../../core/scheduler/watcher.service.js';
@@ -25,17 +32,33 @@ let schedulerService = null;
 let tagSuggestionService = null;
 let folderService = null;
 let folderSuggestionService = null;
+let tagProcessor = null;
+let folderProcessor = null;
+let processorsRegistry = null;
 let organizationSuggestionService = null;
 let rulesService = null;
 let settingsService = null;
 
-function reloadSuggestionRules() {
-  tagSuggestionService?.reloadRules();
-  folderSuggestionService?.reloadRules();
+function getProcessorsDir() {
+  return path.join(app.getPath('userData'), 'processors');
+}
+
+function getLegacyRulesDir() {
+  return path.join(app.getPath('userData'), 'rules');
+}
+
+function reloadProcessors() {
+  tagProcessor?.reloadRules();
+  folderProcessor?.reloadRules();
   organizationSuggestionService = null;
 }
 
 function applySettingsSideEffects(settings) {
+  processorsRegistry?.setEnabledResolver(
+    () => getSettingsService().get('enabledProcessors'),
+  );
+  organizationSuggestionService = null;
+
   if (!schedulerService) {
     return;
   }
@@ -49,16 +72,58 @@ function applySettingsSideEffects(settings) {
   }
 }
 
+export function getTagProcessor() {
+  if (tagProcessor) {
+    return tagProcessor;
+  }
+
+  tagProcessor = new TagProcessor({
+    getPersistPath: () => path.join(getProcessorsDir(), 'tag.rules.json'),
+    legacyPersistPath: path.join(getLegacyRulesDir(), 'tag.rules.json'),
+  });
+
+  return tagProcessor;
+}
+
+export function getFolderProcessor() {
+  if (folderProcessor) {
+    return folderProcessor;
+  }
+
+  folderProcessor = new FolderProcessor({
+    getPersistPath: () => path.join(getProcessorsDir(), 'folder.rules.json'),
+    legacyPersistPath: path.join(getLegacyRulesDir(), 'folder.rules.json'),
+  });
+
+  return folderProcessor;
+}
+
+export function getProcessorsRegistry() {
+  if (processorsRegistry) {
+    return processorsRegistry;
+  }
+
+  processorsRegistry = new ProcessorsRegistry({
+    getEnabledProcessors: () => getSettingsService().get('enabledProcessors'),
+  });
+
+  bootstrapDefaultProcessors(processorsRegistry, {
+    tagProcessor: getTagProcessor(),
+    folderProcessor: getFolderProcessor(),
+  });
+
+  return processorsRegistry;
+}
+
 export function getRulesService() {
   if (rulesService) {
     return rulesService;
   }
 
-  rulesService = new RulesService({
-    repository: new RulesRepository({
-      getRulesDir: () => path.join(app.getPath('userData'), 'rules'),
-    }),
-    onChange: reloadSuggestionRules,
+  rulesService = new ProcessorRulesService({
+    tagProcessor: getTagProcessor(),
+    folderProcessor: getFolderProcessor(),
+    onChange: reloadProcessors,
   });
 
   return rulesService;
@@ -85,7 +150,10 @@ export function getFolderService() {
   }
 
   const repos = getRepositories();
-  folderService = new FolderService({ foldersRepo: repos.folders });
+  folderService = new FolderService({
+    foldersRepo: repos.folders,
+    folderSuggestionService: getFolderSuggestionService(),
+  });
 
   return folderService;
 }
@@ -96,7 +164,7 @@ export function getFolderSuggestionService() {
   }
 
   folderSuggestionService = new FolderSuggestionService({
-    rulesService: getRulesService(),
+    folderProcessor: getFolderProcessor(),
   });
 
   return folderSuggestionService;
@@ -108,8 +176,7 @@ export function getOrganizationSuggestionService() {
   }
 
   organizationSuggestionService = new OrganizationSuggestionService({
-    tagSuggestionService: getTagSuggestionService(),
-    folderSuggestionService: getFolderSuggestionService(),
+    registry: getProcessorsRegistry(),
   });
 
   return organizationSuggestionService;
@@ -121,7 +188,7 @@ export function getTagSuggestionService() {
   }
 
   tagSuggestionService = new TagSuggestionService({
-    rulesService: getRulesService(),
+    tagProcessor: getTagProcessor(),
   });
   return tagSuggestionService;
 }
@@ -229,6 +296,9 @@ export function shutdownDatabase() {
   tagSuggestionService = null;
   folderService = null;
   folderSuggestionService = null;
+  tagProcessor = null;
+  folderProcessor = null;
+  processorsRegistry = null;
   organizationSuggestionService = null;
   rulesService = null;
   settingsService = null;
