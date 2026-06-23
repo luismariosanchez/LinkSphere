@@ -1,5 +1,4 @@
 import { debugLog } from '../config/debug.logger.js';
-import { DEFAULT_TAG_RULES_PATH, loadTagRules } from './tag-rules.loader.js';
 
 function uniqueTags(tags) {
   return [...new Set(tags.filter(Boolean))];
@@ -44,24 +43,20 @@ function matchesKeyword(match, context) {
 }
 
 export class TagSuggestionService {
-  constructor({ rulesPath = DEFAULT_TAG_RULES_PATH } = {}) {
-    this.rulesPath = rulesPath;
-    this.rules = null;
+  constructor({ rulesService } = {}) {
+    this.rulesService = rulesService;
   }
 
   loadRules() {
-    if (this.rules) {
-      return this.rules;
+    if (this.rulesService) {
+      return this.rulesService.getTagRulesNormalized();
     }
 
-    this.rules = loadTagRules(this.rulesPath);
-    debugLog('Loaded tag rules:', this.rules);
-
-    return this.rules;
+    throw new Error('TagSuggestionService requiere rulesService');
   }
 
   reloadRules() {
-    this.rules = null;
+    this.rulesService?.invalidateCache();
     return this.loadRules();
   }
 

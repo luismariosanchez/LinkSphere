@@ -924,6 +924,54 @@ textarea {
   border-radius: 6px;
 }
 
+.rules-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rules-editor__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rules-editor__section-header h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.rules-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rules-editor__row,
+.rules-editor__add {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.rules-editor__input {
+  padding: 8px 10px;
+  border: 1px solid #e9e9e7;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.rules-editor__delete {
+  min-width: 36px;
+  padding: 6px 10px;
+}
+
+.rules-editor__empty {
+  margin: 0;
+  font-size: 13px;
+}
+
 .event-log {
   list-style: none;
   margin: 0;

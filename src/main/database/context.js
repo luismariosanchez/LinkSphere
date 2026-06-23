@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { app } from 'electron';
 import { BookmarkService } from '../../core/bookmarks/bookmark.service.js';
-import { initDebugLogger, SettingsService } from '../../core/config/index.js';
+import { initDebugLogger, RulesRepository, RulesService, SettingsService } from '../../core/config/index.js';
 import {
   closeDatabase,
   createRepositories,
@@ -24,8 +24,16 @@ let bookmarkService = null;
 let schedulerService = null;
 let tagSuggestionService = null;
 let folderService = null;
+let folderSuggestionService = null;
 let organizationSuggestionService = null;
+let rulesService = null;
 let settingsService = null;
+
+function reloadSuggestionRules() {
+  tagSuggestionService?.reloadRules();
+  folderSuggestionService?.reloadRules();
+  organizationSuggestionService = null;
+}
 
 function applySettingsSideEffects(settings) {
   if (!schedulerService) {
@@ -39,6 +47,21 @@ function applySettingsSideEffects(settings) {
   } else {
     schedulerService.stop();
   }
+}
+
+export function getRulesService() {
+  if (rulesService) {
+    return rulesService;
+  }
+
+  rulesService = new RulesService({
+    repository: new RulesRepository({
+      getRulesDir: () => path.join(app.getPath('userData'), 'rules'),
+    }),
+    onChange: reloadSuggestionRules,
+  });
+
+  return rulesService;
 }
 
 export function getSettingsService() {
@@ -67,6 +90,18 @@ export function getFolderService() {
   return folderService;
 }
 
+export function getFolderSuggestionService() {
+  if (folderSuggestionService) {
+    return folderSuggestionService;
+  }
+
+  folderSuggestionService = new FolderSuggestionService({
+    rulesService: getRulesService(),
+  });
+
+  return folderSuggestionService;
+}
+
 export function getOrganizationSuggestionService() {
   if (organizationSuggestionService) {
     return organizationSuggestionService;
@@ -74,7 +109,7 @@ export function getOrganizationSuggestionService() {
 
   organizationSuggestionService = new OrganizationSuggestionService({
     tagSuggestionService: getTagSuggestionService(),
-    folderSuggestionService: new FolderSuggestionService(),
+    folderSuggestionService: getFolderSuggestionService(),
   });
 
   return organizationSuggestionService;
@@ -85,7 +120,9 @@ export function getTagSuggestionService() {
     return tagSuggestionService;
   }
 
-  tagSuggestionService = new TagSuggestionService();
+  tagSuggestionService = new TagSuggestionService({
+    rulesService: getRulesService(),
+  });
   return tagSuggestionService;
 }
 
@@ -191,6 +228,8 @@ export function shutdownDatabase() {
   bookmarkService = null;
   tagSuggestionService = null;
   folderService = null;
+  folderSuggestionService = null;
   organizationSuggestionService = null;
+  rulesService = null;
   settingsService = null;
 }

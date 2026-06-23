@@ -140,4 +140,22 @@ export const apiClient = {
       return getApi().suggestions.get(context);
     },
   },
+
+  rules: {
+    getAll() {
+      return getApi().rules.getAll();
+    },
+
+    update(type, payload) {
+      return getApi().rules.update(type, payload);
+    },
+
+    addRule(type, rule) {
+      return getApi().rules.addRule(type, rule);
+    },
+
+    deleteRule(type, id) {
+      return getApi().rules.deleteRule(type, id);
+    },
+  },
 };

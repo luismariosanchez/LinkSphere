@@ -4,7 +4,6 @@ import {
   matchesDomain,
   resolveIsLive,
 } from '../tags/tag-suggestion.service.js';
-import { DEFAULT_FOLDER_RULES_PATH, loadFolderRules } from './folder-rules.loader.js';
 
 function uniqueNames(names) {
   return [...new Set(names.filter(Boolean))];
@@ -26,24 +25,20 @@ function matchesKeyword(match, context) {
 }
 
 export class FolderSuggestionService {
-  constructor({ rulesPath = DEFAULT_FOLDER_RULES_PATH } = {}) {
-    this.rulesPath = rulesPath;
-    this.rules = null;
+  constructor({ rulesService } = {}) {
+    this.rulesService = rulesService;
   }
 
   loadRules() {
-    if (this.rules) {
-      return this.rules;
+    if (this.rulesService) {
+      return this.rulesService.getFolderRulesNormalized();
     }
 
-    this.rules = loadFolderRules(this.rulesPath);
-    debugLog('Loaded folder rules:', this.rules);
-
-    return this.rules;
+    throw new Error('FolderSuggestionService requiere rulesService');
   }
 
   reloadRules() {
-    this.rules = null;
+    this.rulesService?.invalidateCache();
     return this.loadRules();
   }
 

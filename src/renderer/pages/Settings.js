@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { RulesEditor } from '../components/RulesEditor.js';
 import { apiClient } from '../services/api.client.js';
 
 function ImportOverlay({ progress }) {
@@ -231,6 +232,15 @@ export function Settings({ onDataChanged }) {
             onChange={(event) => void handleChange({ autoRefresh: event.target.checked })}
           />
         </label>
+      </section>
+
+      <section className="panel settings-panel">
+        <h2 className="settings-panel__title">Rules Editor</h2>
+        <p className="muted settings-panel__desc">
+          Define keywords para sugerir tags y carpetas al crear o editar bookmarks
+        </p>
+
+        <RulesEditor disabled={saving || transferLoading} />
       </section>
 
       <section className="panel settings-panel">

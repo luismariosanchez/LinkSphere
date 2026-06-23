@@ -32,4 +32,9 @@ export const IPC_CHANNELS = {
   FOLDERS_SUGGEST: 'folders:suggest',
 
   SUGGESTIONS_GET: 'suggestions:get',
+
+  RULES_GET_ALL: 'rules:getAll',
+  RULES_UPDATE: 'rules:update',
+  RULES_ADD: 'rules:addRule',
+  RULES_DELETE: 'rules:deleteRule',
 };

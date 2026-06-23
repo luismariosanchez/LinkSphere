@@ -56,6 +56,13 @@ const api = {
   suggestions: {
     get: (context) => ipcRenderer.invoke(IPC_CHANNELS.SUGGESTIONS_GET, context),
   },
+
+  rules: {
+    getAll: () => ipcRenderer.invoke(IPC_CHANNELS.RULES_GET_ALL),
+    update: (type, payload) => ipcRenderer.invoke(IPC_CHANNELS.RULES_UPDATE, type, payload),
+    addRule: (type, rule) => ipcRenderer.invoke(IPC_CHANNELS.RULES_ADD, type, rule),
+    deleteRule: (type, id) => ipcRenderer.invoke(IPC_CHANNELS.RULES_DELETE, type, id),
+  },
 };
 
 contextBridge.exposeInMainWorld('api', api);
