@@ -63,6 +63,24 @@ const api = {
     addRule: (type, rule) => ipcRenderer.invoke(IPC_CHANNELS.RULES_ADD, type, rule),
     deleteRule: (type, id) => ipcRenderer.invoke(IPC_CHANNELS.RULES_DELETE, type, id),
   },
+
+  ingestion: {
+    ingest: (input) => ipcRenderer.invoke(IPC_CHANNELS.INGESTION_INGEST, input),
+    onOpenQuickAdd: (callback) => {
+      const handler = () => callback();
+      ipcRenderer.on(IPC_CHANNELS.INGESTION_OPEN_QUICK_ADD, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.INGESTION_OPEN_QUICK_ADD, handler);
+      };
+    },
+    onBookmarkCreated: (callback) => {
+      const handler = (_event, bookmark) => callback(bookmark);
+      ipcRenderer.on(IPC_CHANNELS.INGESTION_BOOKMARK_CREATED, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.INGESTION_BOOKMARK_CREATED, handler);
+      };
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('api', api);

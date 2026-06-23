@@ -1,12 +1,14 @@
 import { app, BrowserWindow } from 'electron';
 import { getSchedulerService, getSettingsService, shutdownDatabase } from '../database/context.js';
 import { registerIpcHandlers } from '../ipc/index.js';
+import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 import { createMainWindow } from '../windows/main.window.js';
 
 export function bootstrap() {
   void app.whenReady().then(() => {
     registerIpcHandlers();
     createMainWindow();
+    registerGlobalShortcuts();
     const scheduler = getSchedulerService();
     const settings = getSettingsService().getAll();
 
@@ -29,6 +31,7 @@ export function bootstrap() {
   });
 
   app.on('will-quit', () => {
+    unregisterGlobalShortcuts();
     shutdownDatabase();
   });
 }

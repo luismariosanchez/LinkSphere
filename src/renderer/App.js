@@ -1,18 +1,41 @@
 import { useCallback, useEffect, useState } from 'react';
+import { QuickAddBookmark } from './components/QuickAddBookmark.js';
 import { Dashboard } from './pages/Dashboard.js';
 import { Settings } from './pages/Settings.js';
+import { apiClient } from './services/api.client.js';
 
 export function App() {
   const [view, setView] = useState('dashboard');
   const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   const refreshDashboard = useCallback(() => {
     setDashboardRefreshKey((key) => key + 1);
   }, []);
 
+  useEffect(() => {
+    const unsubscribeQuickAdd = apiClient.ingestion.onOpenQuickAdd(() => {
+      setQuickAddOpen(true);
+    });
+
+    const unsubscribeCreated = apiClient.ingestion.onBookmarkCreated(() => {
+      refreshDashboard();
+    });
+
+    return () => {
+      unsubscribeQuickAdd();
+      unsubscribeCreated();
+    };
+  }, [refreshDashboard]);
+
   function openDashboard() {
     setView('dashboard');
     refreshDashboard();
+  }
+
+  function handleQuickAddCreated() {
+    refreshDashboard();
+    setView('dashboard');
   }
 
   return (
@@ -34,6 +57,14 @@ export function App() {
           >
             Settings
           </button>
+          <button
+            type="button"
+            className="app-nav__tab app-nav__tab--action"
+            onClick={() => setQuickAddOpen(true)}
+            title="Ctrl+Shift+A"
+          >
+            + Quick Add
+          </button>
         </div>
       </nav>
 
@@ -42,6 +73,12 @@ export function App() {
       ) : (
         <Settings onDataChanged={refreshDashboard} />
       )}
+
+      <QuickAddBookmark
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onCreated={handleQuickAddCreated}
+      />
     </div>
   );
 }

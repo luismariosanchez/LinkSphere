@@ -82,21 +82,30 @@ export class BookmarkService {
 
     debugLog('[BookmarkService] URL recibida:', url);
 
-    const metadata = await this.providerManager.resolveMetadata(url);
+    const metadata = input.metadata ?? await this.providerManager.resolveMetadata(url);
+
+    if (input.title?.trim()) {
+      metadata.title = input.title.trim();
+    }
+
     debugLog('[BookmarkService] metadata devuelta:', metadata);
     debugLog('Provider streamStatus:', metadata.extra?.streamStatus ?? null);
 
     const lastStatus = resolveBookmarkStatus(metadata);
 
-    const tagIds = this.#applyTagIntelligence({
-      tagIds: input.tagIds ?? [],
-      metadata,
-      url: metadata.url,
-      title: metadata.title,
-      applySuggested: true,
-    });
+    const tagIds = input.suggestionsApplied
+      ? (input.tagIds ?? [])
+      : this.#applyTagIntelligence({
+        tagIds: input.tagIds ?? [],
+        metadata,
+        url: metadata.url,
+        title: metadata.title,
+        applySuggested: true,
+      });
 
-    const folderId = this.#resolveFolderId(input, metadata, tagIds);
+    const folderId = input.suggestionsApplied
+      ? (input.folderId ?? null)
+      : this.#resolveFolderId(input, metadata, tagIds);
 
     const bookmarkData = {
       url: metadata.url,

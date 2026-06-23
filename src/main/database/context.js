@@ -21,6 +21,7 @@ import { WatcherService } from '../../core/scheduler/watcher.service.js';
 import { EventService } from '../../core/services/event.service.js';
 import { TagSuggestionService } from '../../core/tags/index.js';
 import { FolderService } from '../../core/folders/index.js';
+import { IngestionService } from '../../core/ingestion/index.js';
 import { OrganizationSuggestionService } from '../../core/suggestions/index.js';
 import { FolderSuggestionService } from '../../core/folders/folder-suggestion.service.js';
 
@@ -28,6 +29,7 @@ let repositories = null;
 let eventService = null;
 let watcherService = null;
 let bookmarkService = null;
+let ingestionService = null;
 let schedulerService = null;
 let tagSuggestionService = null;
 let folderService = null;
@@ -261,6 +263,24 @@ export function getBookmarkService() {
   return bookmarkService;
 }
 
+export function getIngestionService() {
+  if (ingestionService) {
+    return ingestionService;
+  }
+
+  const repos = getRepositories();
+  ingestionService = new IngestionService({
+    bookmarkService: getBookmarkService(),
+    organizationSuggestionService: getOrganizationSuggestionService(),
+    providerManager: new ProviderManager(),
+    tagsRepo: repos.tags,
+    foldersRepo: repos.folders,
+    eventService: getEventService(),
+  });
+
+  return ingestionService;
+}
+
 export function getSchedulerService() {
   if (schedulerService) {
     return schedulerService;
@@ -293,6 +313,7 @@ export function shutdownDatabase() {
   eventService = null;
   watcherService = null;
   bookmarkService = null;
+  ingestionService = null;
   tagSuggestionService = null;
   folderService = null;
   folderSuggestionService = null;

@@ -2,6 +2,7 @@ import { registerAppIpcHandlers } from './app.ipc.js';
 import { registerBookmarksIpcHandlers } from './bookmarks.ipc.js';
 import { registerEventsIpcHandlers } from './events.ipc.js';
 import { registerFoldersIpcHandlers } from './folders.ipc.js';
+import { registerIngestionIpcHandlers } from './ingestion.ipc.js';
 import { registerRulesIpcHandlers } from './rules.ipc.js';
 import { registerSettingsIpcHandlers } from './settings.ipc.js';
 import { registerSuggestionsIpcHandlers } from './suggestions.ipc.js';
@@ -16,4 +17,5 @@ export function registerIpcHandlers() {
   registerSettingsIpcHandlers();
   registerSuggestionsIpcHandlers();
   registerRulesIpcHandlers();
+  registerIngestionIpcHandlers();
 }

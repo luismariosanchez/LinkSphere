@@ -37,4 +37,8 @@ export const IPC_CHANNELS = {
   RULES_UPDATE: 'rules:update',
   RULES_ADD: 'rules:addRule',
   RULES_DELETE: 'rules:deleteRule',
+
+  INGESTION_INGEST: 'ingestion:ingest',
+  INGESTION_OPEN_QUICK_ADD: 'ingestion:openQuickAdd',
+  INGESTION_BOOKMARK_CREATED: 'ingestion:bookmarkCreated',
 };

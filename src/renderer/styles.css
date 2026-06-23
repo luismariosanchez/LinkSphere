@@ -67,6 +67,38 @@ textarea {
   font-weight: 500;
 }
 
+.app-nav__tab--action {
+  margin-left: 8px;
+  color: #2563eb;
+}
+
+.app-nav__tab--action:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.quick-add-modal {
+  width: min(420px, 92vw);
+}
+
+.quick-add-modal__hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+}
+
+.quick-add-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-add-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 /* ── Dashboard layout ── */
 
 .dashboard-layout {

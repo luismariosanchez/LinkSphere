@@ -158,4 +158,26 @@ export const apiClient = {
       return getApi().rules.deleteRule(type, id);
     },
   },
+
+  ingestion: {
+    ingest(input) {
+      return getApi().ingestion.ingest(input);
+    },
+
+    onOpenQuickAdd(callback) {
+      const api = getApi();
+      if (!api.ingestion?.onOpenQuickAdd) {
+        return () => {};
+      }
+      return api.ingestion.onOpenQuickAdd(callback);
+    },
+
+    onBookmarkCreated(callback) {
+      const api = getApi();
+      if (!api.ingestion?.onBookmarkCreated) {
+        return () => {};
+      }
+      return api.ingestion.onBookmarkCreated(callback);
+    },
+  },
 };
