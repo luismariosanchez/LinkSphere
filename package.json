@@ -1,0 +1,33 @@
+{
+  "name": "marcadores-app",
+  "version": "0.1.0",
+  "description": "Desktop bookmarks app — Electron + Node.js + Vite",
+  "main": "src/main/main.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:preload\" \"npm:dev:electron\"",
+    "dev:vite": "vite",
+    "dev:preload": "vite build --config vite.preload.config.js --watch",
+    "dev:electron": "wait-on tcp:5173 dist/preload/index.cjs && cross-env NODE_ENV=development electron .",
+    "build:preload": "vite build --config vite.preload.config.js",
+    "build": "npm run build:preload && vite build",
+    "start": "cross-env NODE_ENV=production electron .",
+    "rebuild": "electron-rebuild -f -w better-sqlite3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "cheerio": "^1.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
+    "@vitejs/plugin-react": "^4.5.0",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^36.3.2",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
+  }
+}

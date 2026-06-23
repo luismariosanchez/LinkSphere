@@ -1,0 +1,31 @@
+{
+  "keywordRules": [
+    { "match": "learning", "tag": "Study" },
+    { "match": "tutorial", "tag": "Tutorial" },
+    { "match": "curso", "tag": "Study" },
+    { "match": "anime", "tag": "Anime" },
+    { "match": "manga", "tag": "Anime" },
+    { "match": "review", "tag": "Review" },
+    { "match": "music", "tag": "Music" },
+    { "match": "podcast", "tag": "Podcast" },
+    { "match": "documentary", "tag": "Documentary" },
+    { "match": "gameplay", "tag": "Gaming" },
+    { "match": "news", "tag": "News" }
+  ],
+  "providerRules": [
+    { "provider": "youtube", "tag": "YouTube" },
+    { "provider": "twitch", "tag": "Twitch" },
+    { "provider": "generic", "tag": "Web" }
+  ],
+  "domainRules": [
+    { "domain": "github.com", "tag": "Dev" },
+    { "domain": "gitlab.com", "tag": "Dev" },
+    { "domain": "stackoverflow.com", "tag": "Dev" },
+    { "domain": "medium.com", "tag": "Reading" },
+    { "domain": "notion.so", "tag": "Productivity" },
+    { "domain": "reddit.com", "tag": "Community" }
+  ],
+  "liveRules": [
+    { "isLive": true, "tag": "Live" }
+  ]
+}

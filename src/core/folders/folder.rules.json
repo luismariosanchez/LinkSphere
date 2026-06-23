@@ -1,0 +1,29 @@
+{
+  "keywordRules": [
+    { "match": "learning", "folder": "Study" },
+    { "match": "tutorial", "folder": "Study" },
+    { "match": "curso", "folder": "Study" },
+    { "match": "anime", "folder": "Anime" },
+    { "match": "manga", "folder": "Anime" },
+    { "match": "review", "folder": "Reviews" },
+    { "match": "music", "folder": "Music" },
+    { "match": "gameplay", "folder": "Gaming" }
+  ],
+  "providerRules": [
+    { "provider": "youtube", "folder": "Videos" },
+    { "provider": "twitch", "folder": "Streams" }
+  ],
+  "providerLiveRules": [
+    { "provider": "twitch", "folder": "Live" }
+  ],
+  "domainRules": [
+    { "domain": "github.com", "folder": "Dev" },
+    { "domain": "gitlab.com", "folder": "Dev" },
+    { "domain": "stackoverflow.com", "folder": "Dev" },
+    { "domain": "medium.com", "folder": "Reading" },
+    { "domain": "notion.so", "folder": "Productivity" }
+  ],
+  "liveRules": [
+    { "isLive": true, "folder": "Live" }
+  ]
+}
