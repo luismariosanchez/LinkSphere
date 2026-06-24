@@ -1,10 +1,11 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import { getSchedulerService, getSettingsService, shutdownDatabase } from '../database/context.js';
 import { registerIpcHandlers } from '../ipc/index.js';
 import { createMainWindow } from '../windows/main.window.js';
 
 export function bootstrap() {
   void app.whenReady().then(() => {
+    Menu.setApplicationMenu(null);
     registerIpcHandlers();
     createMainWindow();
     const scheduler = getSchedulerService();

@@ -1,47 +1,55 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Dashboard } from './pages/Dashboard.js';
 import { Settings } from './pages/Settings.js';
+import { Sidebar } from './components/Sidebar.js';
 
 export function App() {
   const [view, setView] = useState('dashboard');
+  const [dashboardMode, setDashboardMode] = useState('dashboard');
   const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
+  const createBookmarkRef = useRef(null);
+
+  const registerCreate = useCallback((fn) => {
+    createBookmarkRef.current = fn;
+  }, []);
 
   const refreshDashboard = useCallback(() => {
     setDashboardRefreshKey((key) => key + 1);
   }, []);
 
-  function openDashboard() {
+  function handleNavigate(mode) {
     setView('dashboard');
-    refreshDashboard();
+    setDashboardMode(mode);
+  }
+
+  function handleCreateBookmark() {
+    setView('dashboard');
+    setDashboardMode('dashboard');
+    createBookmarkRef.current?.();
   }
 
   return (
-    <div className="app">
-      <nav className="app-nav">
-        <span className="app-nav__brand">Marcadores</span>
-        <div className="app-nav__tabs">
-          <button
-            type="button"
-            className={view === 'dashboard' ? 'app-nav__tab app-nav__tab--active' : 'app-nav__tab'}
-            onClick={openDashboard}
-          >
-            Dashboard
-          </button>
-          <button
-            type="button"
-            className={view === 'settings' ? 'app-nav__tab app-nav__tab--active' : 'app-nav__tab'}
-            onClick={() => setView('settings')}
-          >
-            Settings
-          </button>
-        </div>
-      </nav>
+    <div className="app app--figma">
+      <Sidebar
+        activeView={view}
+        dashboardMode={dashboardMode}
+        onNavigate={handleNavigate}
+        onOpenSettings={() => setView('settings')}
+        onCreateBookmark={handleCreateBookmark}
+      />
 
-      {view === 'dashboard' ? (
-        <Dashboard refreshKey={dashboardRefreshKey} />
-      ) : (
-        <Settings onDataChanged={refreshDashboard} />
-      )}
+      <div className="app__main scrollbar-hidden">
+        {view === 'dashboard' ? (
+          <Dashboard
+            refreshKey={dashboardRefreshKey}
+            dashboardMode={dashboardMode}
+            onDashboardModeChange={setDashboardMode}
+            onRegisterCreate={registerCreate}
+          />
+        ) : (
+          <Settings onDataChanged={refreshDashboard} />
+        )}
+      </div>
     </div>
   );
 }

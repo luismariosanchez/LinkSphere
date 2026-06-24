@@ -1,32 +1,57 @@
-import { getStatusLabel, getTypeLabel } from '../utils/bookmarks.js';
+import { useState } from 'react';
+import folderIcon from '../assets/icons/folder_in_bookmark_card_icon.svg';
+import internetIcon from '../assets/icons/internet-svgrepo-com.svg';
+import { TagChip } from './TagChip.js';
+import { getTypeLabel } from '../utils/bookmarks.js';
+import { resolveCardBadge } from '../utils/news.js';
 
-export function BookmarkCard({ bookmark, tags, folderName, onOpen, onEdit, onDelete }) {
-  const statusClass = bookmark.lastStatus === 'live'
-    ? 'status-badge--live'
-    : bookmark.lastStatus === 'dead' || bookmark.lastStatus === 'error'
-      ? 'status-badge--dead'
-      : bookmark.lastStatus === 'unknown'
-        ? 'status-badge--unknown'
-        : 'status-badge--neutral';
+function BookmarkCardThumbnail({ thumbnail }) {
+  const [hasError, setHasError] = useState(false);
+  const showPlaceholder = !thumbnail || hasError;
+
+  if (showPlaceholder) {
+    return (
+      <div className="bookmark-card__thumb bookmark-card__thumb--empty">
+        <img src={internetIcon} alt="" className="bookmark-card__thumb-placeholder" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={thumbnail}
+      alt=""
+      className="bookmark-card__thumb"
+      loading="lazy"
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
+export function BookmarkCard({  bookmark,
+  tags,
+  folderName,
+  lastEvent,
+  onOpen,
+  onEdit,
+  className = '',
+}) {
+  const badge = resolveCardBadge(bookmark, lastEvent);
+  const isDown = bookmark.lastStatus === 'dead' || bookmark.lastStatus === 'error';
+  const tagLabel = tags[0]?.name ?? getTypeLabel(bookmark.type);
 
   function handleCardClick() {
     onOpen?.(bookmark.url);
   }
 
-  function handleEdit(event) {
-    event.stopPropagation();
-    onEdit?.(bookmark);
-  }
-
-  function handleDelete(event) {
-    event.stopPropagation();
-    onDelete?.(bookmark);
-  }
-
   return (
     <article
-      className="bookmark-item bookmark-card"
+      className={`bookmark-card${className ? ` ${className}` : ''}`}
       onClick={handleCardClick}
+      onDoubleClick={(event) => {
+        event.stopPropagation();
+        onEdit?.(bookmark);
+      }}
       role="button"
       tabIndex={0}
       onKeyDown={(event) => {
@@ -36,53 +61,30 @@ export function BookmarkCard({ bookmark, tags, folderName, onOpen, onEdit, onDel
         }
       }}
     >
-      {bookmark.thumbnail ? (
-        <img
-          src={bookmark.thumbnail}
-          alt=""
-          className="bookmark-item__thumb"
-          loading="lazy"
-        />
-      ) : (
-        <div className="bookmark-item__thumb bookmark-item__thumb--empty">
-          Sin imagen
-        </div>
-      )}
+      <div className="bookmark-card__thumb-wrap">
+        <BookmarkCardThumbnail thumbnail={bookmark.thumbnail} />
 
-      <div className="bookmark-item__body">
-        <div className="bookmark-item__meta-row">
-          <span className={`status-badge ${statusClass}`}>
-            {getStatusLabel(bookmark.lastStatus)}
+        {isDown ? (          <div className="bookmark-card__overlay bookmark-card__overlay--down">
+            <span className="bookmark-card__overlay-text">Web caída</span>
+          </div>
+        ) : badge ? (
+          <span className={`bookmark-card__badge bookmark-card__badge--${badge.variant}`}>
+            {badge.text}
           </span>
-          <span className="type-badge">{getTypeLabel(bookmark.type)}</span>
-        </div>
+        ) : null}
+      </div>
 
-        <h3 className="bookmark-item__title">{bookmark.title}</h3>
-
-        <p className="bookmark-card__url muted">{bookmark.url}</p>
+      <div className="bookmark-card__body">
+        <h3 className="bookmark-card__title">{bookmark.title}</h3>
 
         {folderName && (
-          <p className="bookmark-card__folder muted">📁 {folderName}</p>
+          <p className="bookmark-card__folder">
+            <img src={folderIcon} alt="" className="bookmark-card__folder-icon" />
+            <span className="bookmark-card__folder-name">{folderName}</span>
+          </p>
         )}
 
-        {tags.length > 0 && (
-          <div className="bookmark-item__tags">
-            {tags.map((tag) => (
-              <span key={tag.id} className="tag-pill">
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="bookmark-item__actions">
-          <button type="button" className="btn-secondary" onClick={handleEdit}>
-            Editar
-          </button>
-          <button type="button" className="btn-danger" onClick={handleDelete}>
-            Eliminar
-          </button>
-        </div>
+        <TagChip label={tagLabel} />
       </div>
     </article>
   );

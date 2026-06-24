@@ -22,6 +22,7 @@ export function createMainWindow() {
     width: 1024,
     height: 768,
     show: false,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,

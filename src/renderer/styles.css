@@ -7,8 +7,14 @@ body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  color: #37352f;
-  background: #f7f6f3;
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
 }
 
 button,
