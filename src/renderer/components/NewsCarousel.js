@@ -24,17 +24,15 @@ export function NewsCarousel({ items, onOpen, onEdit }) {
         className="news-carousel scrollbar-hidden"
         {...dragHandlers}
       >
-        {items.map(({ event, card }) => (
+        {items.map(({ card }) => (
           <BookmarkCard
-            key={event.id}
+            key={card.bookmark.id}
             className="bookmark-card--carousel"
             bookmark={card.bookmark}
             tags={card.tags}
             folderName={card.folderName}
             isFolderPinned={card.isFolderPinned}
             badge={card.badge}
-            providerLabel={card.providerLabel}
-            statusLabel={card.statusLabel}
             tagLabel={card.tagLabel}
             isDown={card.isDown}
             onOpen={onOpen}

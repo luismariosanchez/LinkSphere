@@ -11,13 +11,11 @@ export class DashboardService {
     bookmarkQueryService,
     folderService,
     tagsRepo,
-    getLatestEvents,
   }) {
     this.bookmarkCrudService = bookmarkCrudService;
     this.bookmarkQueryService = bookmarkQueryService;
     this.folderService = folderService;
     this.tagsRepo = tagsRepo;
-    this.getLatestEvents = getLatestEvents;
   }
 
   async getData(input = {}) {
@@ -61,7 +59,7 @@ export class DashboardService {
     }
 
     const [newsData, pinnedFolders, gridResult] = await Promise.all([
-      this.getLatestEvents(NEWS_LIMIT),
+      Promise.resolve(this.bookmarkQueryService.getLatestNewsEvents(NEWS_LIMIT)),
       Promise.resolve(this.folderService.getPinnedFolders()),
       this.bookmarkQueryService.queryBookmarks(buildDashboardGridQuery(input)),
     ]);

@@ -1,11 +1,9 @@
 import { debugLog } from '../../config/debug.logger.js';
 import { detectBookmarkEvents } from '../../events/bookmark-change.detector.js';
-import { resolveBookmarkStatus } from '../../providers/utils/stream-status.js';
-import { normalizeUrl } from '../../providers/utils/url.js';
 import { parseBookmarksHtml, serializeBookmarksHtml } from '../../domain/bookmarks/bookmarks-html.js';
+import { normalizeUrl } from '../../providers/utils/url.js';
 import {
   applyTagIntelligence,
-  resolveFolderId,
   saveStateSnapshot,
 } from './bookmark-intelligence.js';
 
@@ -15,7 +13,6 @@ export class BookmarkService {
     tagsRepo,
     folderService,
     eventService,
-    providerManager,
     tagSuggestionService,
     settingsService,
   }) {
@@ -23,59 +20,28 @@ export class BookmarkService {
     this.tagsRepo = tagsRepo;
     this.folderService = folderService;
     this.eventService = eventService;
-    this.providerManager = providerManager;
     this.tagSuggestionService = tagSuggestionService;
     this.settingsService = settingsService;
   }
 
-  async create(input) {
-    const url = input.url?.trim();
-
-    if (!url) {
-      throw new Error('La URL es obligatoria');
-    }
-
-    debugLog('[BookmarkService] URL recibida:', url);
-
-    const metadata = await this.providerManager.resolveMetadata(url);
-    debugLog('[BookmarkService] metadata devuelta:', metadata);
-    debugLog('Provider streamStatus:', metadata.extra?.streamStatus ?? null);
-
-    const lastStatus = resolveBookmarkStatus(metadata);
-
-    const tagIds = applyTagIntelligence({
-      tagSuggestionService: this.tagSuggestionService,
-      tagsRepo: this.tagsRepo,
-      settingsService: this.settingsService,
-      tagIds: input.tagIds ?? [],
-      metadata,
-      url: metadata.url,
-      title: metadata.title,
-      applySuggested: true,
-    });
-
-    const folderId = resolveFolderId({
-      folderService: this.folderService,
-      tagsRepo: this.tagsRepo,
-      input,
-      metadata,
-      tagIds,
-    });
+  persist(payload) {
+    const { metadata, ...bookmarkFields } = payload;
 
     const bookmarkData = {
-      url: metadata.url,
-      title: metadata.title,
-      type: metadata.type,
-      thumbnail: metadata.thumbnail,
-      folderId,
-      tagIds,
-      lastStatus,
+      url: bookmarkFields.url,
+      title: bookmarkFields.title,
+      type: bookmarkFields.type,
+      thumbnail: bookmarkFields.thumbnail,
+      folderId: bookmarkFields.folderId ?? null,
+      tagIds: bookmarkFields.tagIds ?? [],
+      lastStatus: bookmarkFields.lastStatus,
+      isFavorite: Boolean(bookmarkFields.isFavorite),
     };
 
-    debugLog('[BookmarkService] datos a guardar:', bookmarkData);
+    debugLog('[BookmarkService] persist:', bookmarkData);
 
     const saved = this.bookmarksRepo.create(bookmarkData);
-    debugLog('[BookmarkService] datos guardados en DB:', saved);
+    debugLog('[BookmarkService] guardado en DB:', saved);
 
     saveStateSnapshot(this.bookmarksRepo, saved.id, metadata);
 
@@ -86,7 +52,7 @@ export class BookmarkService {
       isNew: true,
     });
     const events = this.eventService.createEvents(saved.id, eventDefinitions);
-    debugLog('[BookmarkService] events en create:', events.map((e) => e.type));
+    debugLog('[BookmarkService] events en persist:', events.map((event) => event.type));
 
     return saved;
   }
@@ -173,111 +139,5 @@ export class BookmarkService {
     const bookmarks = this.bookmarksRepo.getAll();
     const folders = this.folderService.getFolders();
     return serializeBookmarksHtml(bookmarks, folders);
-  }
-
-  #resolveFolderPath(folderPath) {
-    let parentId = null;
-    let folderId = null;
-
-    for (const name of folderPath) {
-      const trimmed = name.trim();
-      if (!trimmed) {
-        continue;
-      }
-
-      const folders = this.folderService.getFolders();
-      const existing = folders.find(
-        (folder) => folder.name.toLowerCase() === trimmed.toLowerCase()
-          && (folder.parentId ?? null) === parentId,
-      );
-
-      if (existing) {
-        folderId = existing.id;
-      } else {
-        const created = this.folderService.createFolder({ name: trimmed, parentId });
-        folderId = created.id;
-      }
-
-      parentId = folderId;
-    }
-
-    return folderId;
-  }
-
-  async importFromHtml(html, { onProgress } = {}) {
-    const entries = parseBookmarksHtml(html);
-    const existingUrls = new Set(
-      this.bookmarksRepo.getAll().map((bookmark) => normalizeUrl(bookmark.url)),
-    );
-
-    const result = {
-      total: entries.length,
-      imported: 0,
-      skipped: 0,
-      errors: [],
-    };
-
-    debugLog('[BookmarkService] import entries:', entries.length);
-    onProgress?.({ phase: 'start', total: entries.length, current: 0 });
-
-    for (let index = 0; index < entries.length; index += 1) {
-      const entry = entries[index];
-      let normalizedUrl;
-
-      try {
-        normalizedUrl = normalizeUrl(entry.url);
-      } catch {
-        result.errors.push({ url: entry.url, message: 'URL inválida' });
-        onProgress?.({
-          phase: 'progress',
-          total: entries.length,
-          current: index + 1,
-          imported: result.imported,
-          skipped: result.skipped,
-        });
-        continue;
-      }
-
-      if (existingUrls.has(normalizedUrl)) {
-        result.skipped += 1;
-        onProgress?.({
-          phase: 'progress',
-          total: entries.length,
-          current: index + 1,
-          imported: result.imported,
-          skipped: result.skipped,
-        });
-        continue;
-      }
-
-      try {
-        const effectivePath = entry.folderPath ?? [];
-        const folderId = effectivePath.length
-          ? this.#resolveFolderPath(effectivePath)
-          : null;
-
-        await this.create({ url: normalizedUrl, folderId });
-        existingUrls.add(normalizedUrl);
-        result.imported += 1;
-      } catch (err) {
-        result.errors.push({
-          url: entry.url,
-          message: err?.message ?? 'Error al importar',
-        });
-      }
-
-      onProgress?.({
-        phase: 'progress',
-        total: entries.length,
-        current: index + 1,
-        imported: result.imported,
-        skipped: result.skipped,
-      });
-    }
-
-    debugLog('[BookmarkService] import result:', result);
-    onProgress?.({ phase: 'done', ...result });
-
-    return result;
   }
 }

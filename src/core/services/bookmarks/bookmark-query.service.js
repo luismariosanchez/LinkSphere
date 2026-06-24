@@ -1,3 +1,5 @@
+import { NEWS_BOOKMARK_STATUSES } from '../../../shared/constants/events.js';
+
 export class BookmarkQueryService {
   constructor({ bookmarksRepo, folderService, eventService }) {
     this.bookmarksRepo = bookmarksRepo;
@@ -57,8 +59,8 @@ export class BookmarkQueryService {
     return this.folderService.getFolders().find((folder) => folder.id === folderId)?.name ?? null;
   }
 
-  getLatestEvents(limit = 20) {
-    return this.eventService.getLatestEvents(limit)
+  #mapEventsToBookmarkItems(events) {
+    return events
       .map((event) => {
         const bookmark = this.bookmarksRepo.getById(event.bookmarkId);
 
@@ -73,5 +75,19 @@ export class BookmarkQueryService {
         };
       })
       .filter(Boolean);
+  }
+
+  getLatestEvents(limit = 20) {
+    return this.#mapEventsToBookmarkItems(this.eventService.getLatestEvents(limit));
+  }
+
+  getLatestNewsEvents(limit = 20) {
+    return this.bookmarksRepo
+      .getLiveBookmarks(limit, NEWS_BOOKMARK_STATUSES)
+      .map((bookmark) => ({
+        bookmark,
+        folderName: this.#resolveFolderName(bookmark.folderId),
+        event: null,
+      }));
   }
 }

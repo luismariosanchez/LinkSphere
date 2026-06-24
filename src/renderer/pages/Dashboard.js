@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from '../services/api.client.js';
+import { AddBookmark } from '../components/AddBookmark.js';
 import { BookmarkEditor } from '../components/BookmarkEditor.js';
 import { BookmarkList } from '../components/BookmarkList.js';
 import { DashboardHeader } from '../components/DashboardHeader.js';
@@ -34,22 +35,17 @@ function buildDashboardRequest({
   gridFilter,
   bookmarksOffset,
 }) {
-  const filters = {
-    search: query,
-    folderId: selectedFolderId,
-    tagId: tagFilter,
-    type: typeFilter,
-    favoriteFilter,
-    pinnedFilter,
-    sortBy,
-    showFilters,
-    gridFilter,
-  };
-
   if (isBookmarksView) {
     return {
       mode: 'bookmarks',
-      ...filters,
+      search: query,
+      folderId: selectedFolderId,
+      tagId: tagFilter,
+      type: typeFilter,
+      favoriteFilter,
+      pinnedFilter,
+      sortBy,
+      showFilters,
       bookmarksOffset: bookmarksOffset ?? 0,
       bookmarksLimit: BOOKMARKS_PAGE_SIZE,
     };
@@ -57,7 +53,7 @@ function buildDashboardRequest({
 
   return {
     mode: 'dashboard',
-    ...filters,
+    gridFilter,
   };
 }
 
@@ -84,6 +80,9 @@ export function Dashboard({
   const [editingId, setEditingId] = useState(null);
   const [selectedFolderId, setSelectedFolderId] = useState('all');
   const [folderPanelOpen, setFolderPanelOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const skipFilterReloadRef = useRef(true);
+
   const [gridFilter, setGridFilter] = useState('recent');
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState('');
@@ -92,10 +91,6 @@ export function Dashboard({
   const [favoriteFilter, setFavoriteFilter] = useState('all');
   const [pinnedFilter, setPinnedFilter] = useState('all');
   const [sortBy, setSortBy] = useState('title');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newUrl, setNewUrl] = useState('');
-  const [creating, setCreating] = useState(false);
-  const skipFilterReloadRef = useRef(true);
 
   const applyDashboardData = useCallback((data, { appendBookmarks = false } = {}) => {
     setTags(data.tags);
@@ -184,7 +179,15 @@ export function Dashboard({
   }, [refreshKey, loadDashboard]);
 
   useEffect(() => {
-    if (skipFilterReloadRef.current) {
+    if (skipFilterReloadRef.current || isBookmarksView) {
+      return undefined;
+    }
+
+    void loadDashboard();
+  }, [gridFilter, isBookmarksView, loadDashboard]);
+
+  useEffect(() => {
+    if (!isBookmarksView || skipFilterReloadRef.current) {
       return undefined;
     }
 
@@ -194,9 +197,9 @@ export function Dashboard({
 
     return () => window.clearTimeout(timer);
   }, [
-    favoriteFilter,
-    gridFilter,
     isBookmarksView,
+    loadDashboard,
+    favoriteFilter,
     pinnedFilter,
     query,
     selectedFolderId,
@@ -204,7 +207,6 @@ export function Dashboard({
     sortBy,
     tagFilter,
     typeFilter,
-    loadDashboard,
   ]);
 
   useEffect(() => {
@@ -213,28 +215,9 @@ export function Dashboard({
     }
   }, [dashboardMode]);
 
-  async function handleCreate(event) {
-    event.preventDefault();
-
-    const url = newUrl.trim();
-    if (!url) {
-      return;
-    }
-
-    setCreating(true);
-    setError(null);
-
-    try {
-      const created = await apiClient.bookmarks.create({ url });
-      setNewUrl('');
-      setShowAddForm(false);
-      await loadDashboard();
-      setEditingId(created.id);
-    } catch (err) {
-      setError(err?.message ?? 'Error al crear bookmark');
-    } finally {
-      setCreating(false);
-    }
+  function handleBookmarkCreated(created) {
+    void loadDashboard();
+    setEditingId(created.id);
   }
 
   function handleSaved() {
@@ -301,55 +284,45 @@ export function Dashboard({
 
   return (
     <div className="dashboard-figma">
-      <DashboardHeader
-        query={query}
-        onQueryChange={setQuery}
-        filtersActive={showFilters}
-        onFiltersClick={() => setShowFilters((current) => !current)}
-      />
+      {isBookmarksView && (
+        <>
+          <DashboardHeader
+            query={query}
+            onQueryChange={setQuery}
+            filtersActive={showFilters}
+            onFiltersClick={() => setShowFilters((current) => !current)}
+          />
 
-      {showFilters && (
-        <SearchBar
-          typeFilter={typeFilter}
-          onTypeFilterChange={setTypeFilter}
-          statusFilter="all"
-          onStatusFilterChange={() => {}}
-          tagFilter={tagFilter}
-          onTagFilterChange={setTagFilter}
-          tags={tags}
-          folders={folders}
-          folderFilter={selectedFolderId}
-          onFolderFilterChange={handleSelectFolder}
-          favoriteFilter={favoriteFilter}
-          onFavoriteFilterChange={setFavoriteFilter}
-          pinnedFilter={pinnedFilter}
-          onPinnedFilterChange={setPinnedFilter}
-          sortBy={sortBy}
-          onSortByChange={setSortBy}
-          showBookmarkFilters
-        />
-      )}
-
-      {showAddForm && (
-        <section className="add-bookmark add-bookmark--dark">
-          <form className="add-bookmark__form" onSubmit={handleCreate}>
-            <input
-              type="url"
-              value={newUrl}
-              onChange={(event) => setNewUrl(event.target.value)}
-              placeholder="https://youtube.com/… o https://twitch.tv/…"
-              disabled={creating}
-              autoFocus
+          {showFilters && (
+            <SearchBar
+              typeFilter={typeFilter}
+              onTypeFilterChange={setTypeFilter}
+              statusFilter="all"
+              onStatusFilterChange={() => {}}
+              tagFilter={tagFilter}
+              onTagFilterChange={setTagFilter}
+              tags={tags}
+              folders={folders}
+              folderFilter={selectedFolderId}
+              onFolderFilterChange={handleSelectFolder}
+              favoriteFilter={favoriteFilter}
+              onFavoriteFilterChange={setFavoriteFilter}
+              pinnedFilter={pinnedFilter}
+              onPinnedFilterChange={setPinnedFilter}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              showBookmarkFilters
             />
-            <button type="submit" className="btn-primary" disabled={creating || !newUrl.trim()}>
-              {creating ? 'Añadiendo…' : 'Añadir'}
-            </button>
-            <button type="button" className="btn-secondary" onClick={() => setShowAddForm(false)}>
-              Cancelar
-            </button>
-          </form>
-        </section>
+          )}
+        </>
       )}
+
+      <AddBookmark
+        open={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        onCreated={handleBookmarkCreated}
+        onError={setError}
+      />
 
       {error && <p className="error">{error}</p>}
       {dashboardLoading && <LoadingState />}

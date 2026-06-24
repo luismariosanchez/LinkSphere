@@ -32,8 +32,6 @@ export function BookmarkCard({
   folderName,
   isFolderPinned = false,
   badge = null,
-  providerLabel,
-  statusLabel,
   tagLabel,
   isDown = false,
   onOpen,
@@ -99,16 +97,11 @@ export function BookmarkCard({
           </p>
         )}
 
-        <div className="bookmark-card__meta">
-          <span className="bookmark-card__provider">{providerLabel}</span>
-          {!isDown && statusLabel && (
-            <span className={`bookmark-card__status bookmark-card__status--${bookmark.lastStatus}`}>
-              {statusLabel}
-            </span>
-          )}
+        <div className="bookmark-card__tags">
+          {(tags.length > 0 ? tags : tagLabel ? [{ id: '__fallback', name: tagLabel }] : []).map((tag) => (
+            <TagChip key={tag.id} label={tag.name} />
+          ))}
         </div>
-
-        <TagChip label={tagLabel} />
       </div>
     </article>
   );

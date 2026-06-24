@@ -331,33 +331,6 @@ textarea {
   text-decoration: underline;
 }
 
-/* ── Add bookmark ── */
-
-.add-bookmark {
-  background: #fff;
-  border: 1px solid #e9e9e7;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
-
-.add-bookmark__form {
-  display: flex;
-  gap: 8px;
-}
-
-.add-bookmark__form input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #e9e9e7;
-  border-radius: 6px;
-}
-
-.add-bookmark__form input:focus {
-  outline: 2px solid #2383e2;
-  outline-offset: -1px;
-}
-
 /* ── Search bar ── */
 
 .search-bar {

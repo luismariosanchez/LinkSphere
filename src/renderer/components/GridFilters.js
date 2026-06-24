@@ -1,4 +1,5 @@
 import clockIcon from '../assets/icons/clock_icon.svg';
+import starWhiteIcon from '../assets/icons/star_white_icon.svg';
 
 export function GridFilters({ value, onChange }) {
   return (
@@ -12,13 +13,13 @@ export function GridFilters({ value, onChange }) {
           <img src={clockIcon} alt="" className="grid-filters__icon" />
           Reciente
         </button>
-        {/* Reciente / Favoritos: solo estado visual — sin lógica de filtrado aún */}
         <button
           type="button"
           className={value === 'favorites' ? 'grid-filters__btn grid-filters__btn--active' : 'grid-filters__btn'}
           onClick={() => onChange('favorites')}
           aria-pressed={value === 'favorites'}
         >
+          <img src={starWhiteIcon} alt="" className="grid-filters__icon" />
           Favoritos
         </button>
       </div>

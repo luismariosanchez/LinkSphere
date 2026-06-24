@@ -53,6 +53,7 @@
   --tag-chip-padding-x: 7px;
   --tag-chip-padding-y: 4px;
   --tag-chip-height: calc(var(--tag-chip-padding-y) * 2 + 1.2em);
+  --bookmark-card-tags-max-height: calc(var(--tag-chip-height) * 3 + 8px);
   --bookmark-card-folder-max-height: calc(11px * 1.25 * 2);
   --bookmark-card-total-width: calc(
     var(--bookmark-card-width) + var(--bookmark-card-inner-gap) + var(--bookmark-card-body-width)

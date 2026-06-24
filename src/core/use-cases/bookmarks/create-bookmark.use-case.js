@@ -1,9 +1,11 @@
 export class CreateBookmarkUseCase {
-  constructor({ bookmarkService }) {
+  constructor({ ingestionService, bookmarkService }) {
+    this.ingestionService = ingestionService;
     this.bookmarkService = bookmarkService;
   }
 
-  execute(input) {
-    return this.bookmarkService.create(input);
+  async execute(input) {
+    const payload = await this.ingestionService.ingest(input);
+    return this.bookmarkService.persist(payload);
   }
 }

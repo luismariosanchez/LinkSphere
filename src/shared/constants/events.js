@@ -1,3 +1,5 @@
+import { STREAM_STATUS } from './stream.js';
+
 export const EVENT_TYPES = {
   NEW_BOOKMARK: 'NEW_BOOKMARK',
   TITLE_CHANGED: 'TITLE_CHANGED',
@@ -11,5 +13,10 @@ export const EVENT_TYPES = {
   SITE_DOWN: 'SITE_DOWN',
   SITE_UP: 'SITE_UP',
 };
+
+/** Estados de bookmark visibles en la sección Novedades del dashboard */
+export const NEWS_BOOKMARK_STATUSES = [
+  STREAM_STATUS.LIVE,
+];
 
 export { ACTIVITY_EVENT_TYPES } from './activity-events.js';

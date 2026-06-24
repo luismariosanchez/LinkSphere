@@ -33,6 +33,7 @@ import { TagSuggestionService } from '../../core/tags/index.js';
 import { FolderService } from '../../core/folders/index.js';
 import { OrganizationSuggestionService } from '../../core/suggestions/index.js';
 import { FolderSuggestionService } from '../../core/folders/folder-suggestion.service.js';
+import { IngestionService } from '../../core/ingestion/index.js';
 
 let repositories = null;
 let eventService = null;
@@ -54,6 +55,7 @@ let tagProcessor = null;
 let folderProcessor = null;
 let processorsRegistry = null;
 let organizationSuggestionService = null;
+let ingestionService = null;
 let rulesService = null;
 let settingsService = null;
 
@@ -188,6 +190,25 @@ export function getFolderSuggestionService() {
   return folderSuggestionService;
 }
 
+export function getIngestionService() {
+  if (ingestionService) {
+    return ingestionService;
+  }
+
+  const repos = getRepositories();
+  ingestionService = new IngestionService({
+    bookmarksRepo: repos.bookmarks,
+    providerManager: new ProviderManager(),
+    tagsRepo: repos.tags,
+    folderService: getFolderService(),
+    tagSuggestionService: getTagSuggestionService(),
+    settingsService: getSettingsService(),
+    processorsRegistry: getProcessorsRegistry(),
+  });
+
+  return ingestionService;
+}
+
 export function getOrganizationSuggestionService() {
   if (organizationSuggestionService) {
     return organizationSuggestionService;
@@ -267,7 +288,6 @@ function getBookmarkServiceDeps() {
     tagsRepo: repos.tags,
     folderService: getFolderService(),
     eventService: getEventService(),
-    providerManager: new ProviderManager(),
     tagSuggestionService: getTagSuggestionService(),
     settingsService: getSettingsService(),
   };
@@ -325,6 +345,9 @@ export function getBookmarkUseCases() {
     bookmarkService: getBookmarkCrudService(),
     bookmarkQueryService: getBookmarkQueryService(),
     bookmarkInteractionService: getBookmarkInteractionService(),
+    ingestionService: getIngestionService(),
+    bookmarksRepo: getRepositories().bookmarks,
+    folderService: getFolderService(),
   });
 
   return bookmarkUseCases;
@@ -341,7 +364,6 @@ export function getDashboardService() {
     bookmarkQueryService: getBookmarkQueryService(),
     folderService: getFolderService(),
     tagsRepo: repos.tags,
-    getLatestEvents: (limit) => getBookmarkUseCases().getLatestEvents.execute(limit),
   });
 
   return dashboardService;

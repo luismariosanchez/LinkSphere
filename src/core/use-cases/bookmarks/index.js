@@ -16,9 +16,14 @@ export function createBookmarkUseCases({
   bookmarkService,
   bookmarkQueryService,
   bookmarkInteractionService,
+  ingestionService,
+  bookmarksRepo,
+  folderService,
 }) {
+  const create = new CreateBookmarkUseCase({ ingestionService, bookmarkService });
+
   return {
-    create: new CreateBookmarkUseCase({ bookmarkService }),
+    create,
     update: new UpdateBookmarkUseCase({ bookmarkService }),
     delete: new DeleteBookmarkUseCase({ bookmarkService }),
     get: new GetBookmarksUseCase({ bookmarkService, bookmarkQueryService }),
@@ -26,7 +31,7 @@ export function createBookmarkUseCases({
     getRecent: new GetRecentBookmarksUseCase({ bookmarkQueryService }),
     getFavorites: new GetFavoriteBookmarksUseCase({ bookmarkQueryService }),
     rescan: new RescanBookmarkUseCase({ bookmarkInteractionService }),
-    import: new ImportBookmarksUseCase({ bookmarkService }),
+    import: new ImportBookmarksUseCase({ createBookmarkUseCase: create, bookmarksRepo, folderService }),
     export: new ExportBookmarksUseCase({ bookmarkService }),
     getLatestEvents: new GetLatestBookmarkEventsUseCase({ bookmarkQueryService }),
     recordOpen: new RecordBookmarkOpenUseCase({ bookmarkInteractionService }),

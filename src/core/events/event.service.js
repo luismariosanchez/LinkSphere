@@ -60,4 +60,8 @@ export class EventService {
   getLatestEvents(limit = 20) {
     return this.eventsRepo.getLatest(limit);
   }
+
+  getLatestEventsByTypes(types, limit = 20) {
+    return this.eventsRepo.getLatestByTypes(types, limit);
+  }
 }

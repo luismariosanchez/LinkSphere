@@ -53,7 +53,17 @@ export class FolderService {
       return null;
     }
 
-    return this.foldersRepo.findOrCreateByName(suggestedFolder).id;
+    return this.resolveFolderIdByName(suggestedFolder);
+  }
+
+  resolveFolderIdByName(name) {
+    const trimmed = String(name ?? '').trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    return this.foldersRepo.findOrCreateByName(trimmed).id;
   }
 }
 

@@ -30,25 +30,6 @@ export function applyTagIntelligence({
   return tagSuggestionService.mergeTagIds(tagIds ?? [], tagNames, tagsRepo);
 }
 
-export function resolveFolderId({
-  folderService,
-  tagsRepo,
-  input,
-  metadata,
-  tagIds,
-}) {
-  if (input.folderId) {
-    return input.folderId;
-  }
-
-  return folderService.resolveSuggestedFolderId({
-    metadata,
-    tagNames: resolveTagNames(tagsRepo, tagIds),
-    url: metadata.url,
-    title: metadata.title,
-  });
-}
-
 export function saveStateSnapshot(bookmarksRepo, bookmarkId, metadata) {
   const extra = metadata.extra ?? {};
 

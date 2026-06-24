@@ -67,6 +67,24 @@ export class EventRepository {
     return rows.map(mapEventRow);
   }
 
+  getLatestByTypes(types, limit = 20) {
+    if (!types?.length) {
+      return [];
+    }
+
+    const placeholders = types.map(() => '?').join(', ');
+    const rows = this.db
+      .prepare(`
+        SELECT * FROM events
+        WHERE type IN (${placeholders})
+        ORDER BY created_at DESC
+        LIMIT ?
+      `)
+      .all(...types, limit);
+
+    return rows.map(mapEventRow);
+  }
+
   update(id, input) {
     const existing = this.getById(id);
     if (!existing) {

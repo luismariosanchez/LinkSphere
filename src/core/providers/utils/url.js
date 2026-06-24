@@ -6,6 +6,31 @@ export function normalizeUrl(url) {
   return trimmed;
 }
 
+export function validateUrl(url) {
+  const trimmed = String(url ?? '').trim();
+
+  if (!trimmed) {
+    throw new Error('La URL es obligatoria');
+  }
+
+  try {
+    const normalized = normalizeUrl(trimmed);
+    const parsed = new URL(normalized);
+
+    if (!parsed.hostname) {
+      throw new Error('URL inválida');
+    }
+
+    return normalized;
+  } catch (err) {
+    if (err?.message === 'La URL es obligatoria' || err?.message === 'URL inválida') {
+      throw err;
+    }
+
+    throw new Error('URL inválida');
+  }
+}
+
 export function extractYouTubeVideoId(url) {
   try {
     const parsed = new URL(url);

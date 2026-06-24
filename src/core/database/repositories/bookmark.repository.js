@@ -143,6 +143,27 @@ export class BookmarkRepository {
     return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
   }
 
+  getLiveBookmarks(limit = 20, statuses = ['live']) {
+    if (!statuses?.length) {
+      return [];
+    }
+
+    const placeholders = statuses.map(() => '?').join(', ');
+    const rows = this.db
+      .prepare(`
+        SELECT DISTINCT b.*
+        FROM bookmarks b
+        LEFT JOIN bookmark_state bs ON bs.bookmark_id = b.id
+        WHERE b.last_status IN (${placeholders})
+           OR json_extract(bs.data_json, '$.streamStatus') = 'live'
+        ORDER BY COALESCE(b.last_checked, b.created_at) DESC
+        LIMIT ?
+      `)
+      .all(...statuses, limit);
+
+    return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+  }
+
   queryBookmarks(filters = {}) {
     const { countSql, selectSql, params } = buildBookmarkQuery(filters);
 
