@@ -72,6 +72,11 @@ export class IngestionService {
     return this.folderService.resolveFolderIdByName(suggestedFolder);
   }
 
+  async previewMetadata(urlInput) {
+    const url = validateUrl(urlInput);
+    return this.providerManager.resolveMetadata(url);
+  }
+
   async ingest(input = {}) {
     const url = validateUrl(input.url);
     debugLog('[IngestionService] URL normalizada:', url);
@@ -81,12 +86,13 @@ export class IngestionService {
     const metadata = await this.providerManager.resolveMetadata(url);
     debugLog('[IngestionService] metadata:', metadata);
 
+    const title = input.title?.trim() || metadata.title;
     const manualTagIds = input.tagIds ?? [];
     const manualTagNames = resolveTagNames(this.tagsRepo, manualTagIds);
     const pipelineResult = this.#runPipeline({
       metadata,
       url: metadata.url,
-      title: metadata.title,
+      title,
       tagNames: manualTagNames,
     });
 
@@ -104,7 +110,7 @@ export class IngestionService {
 
     return {
       url: metadata.url,
-      title: metadata.title,
+      title,
       type: metadata.type,
       thumbnail: metadata.thumbnail,
       folderId,

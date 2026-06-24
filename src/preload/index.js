@@ -82,6 +82,29 @@ const api = {
     addRule: (type, rule) => ipcRenderer.invoke(IPC_CHANNELS.RULES_ADD, type, rule),
     deleteRule: (type, id) => ipcRenderer.invoke(IPC_CHANNELS.RULES_DELETE, type, id),
   },
+
+  quickAdd: {
+    hide: () => ipcRenderer.invoke(IPC_CHANNELS.QUICK_ADD_HIDE),
+    getInitial: () => ipcRenderer.invoke(IPC_CHANNELS.QUICK_ADD_GET_INITIAL),
+    preview: (url) => ipcRenderer.invoke(IPC_CHANNELS.QUICK_ADD_PREVIEW, url),
+    onShown: (callback) => {
+      const handler = () => callback();
+      ipcRenderer.on(IPC_CHANNELS.QUICK_ADD_SHOWN, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.QUICK_ADD_SHOWN, handler);
+      };
+    },
+  },
+
+  bookmarksChanged: {
+    onChanged: (callback) => {
+      const handler = () => callback();
+      ipcRenderer.on(IPC_CHANNELS.BOOKMARKS_CHANGED, handler);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.BOOKMARKS_CHANGED, handler);
+      };
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('api', api);

@@ -50,4 +50,11 @@ export const IPC_CHANNELS = {
   RULES_UPDATE: 'rules:update',
   RULES_ADD: 'rules:addRule',
   RULES_DELETE: 'rules:deleteRule',
+
+  QUICK_ADD_HIDE: 'quickAdd:hide',
+  QUICK_ADD_GET_INITIAL: 'quickAdd:getInitial',
+  QUICK_ADD_PREVIEW: 'quickAdd:preview',
+  QUICK_ADD_SHOWN: 'quickAdd:shown',
+
+  BOOKMARKS_CHANGED: 'bookmarks:changed',
 };

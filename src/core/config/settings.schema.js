@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = {
   autoTagging: true,
   autoRefresh: true,
   enabledProcessors: DEFAULT_ENABLED_PROCESSORS,
+  quickAddHotkey: 'CommandOrControl+Space',
 };
 
 export function normalizeEnabledProcessors(input) {
@@ -33,5 +34,7 @@ export function normalizeSettings(input = {}) {
     autoTagging: Boolean(input.autoTagging ?? DEFAULT_SETTINGS.autoTagging),
     autoRefresh: Boolean(input.autoRefresh ?? DEFAULT_SETTINGS.autoRefresh),
     enabledProcessors: normalizeEnabledProcessors(input.enabledProcessors),
+    quickAddHotkey: String(input.quickAddHotkey ?? DEFAULT_SETTINGS.quickAddHotkey).trim()
+      || DEFAULT_SETTINGS.quickAddHotkey,
   };
 }

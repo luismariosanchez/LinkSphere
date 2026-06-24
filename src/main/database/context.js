@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { app } from 'electron';
+import { reloadQuickAddHotkey } from '../services/quick-add-hotkey.js';
 import {
   BookmarkInteractionService,
   BookmarkQueryService,
@@ -78,6 +79,7 @@ function applySettingsSideEffects(settings) {
     () => getSettingsService().get('enabledProcessors'),
   );
   organizationSuggestionService = null;
+  reloadQuickAddHotkey();
 
   if (!schedulerService) {
     return;

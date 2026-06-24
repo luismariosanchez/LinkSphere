@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { apiClient } from './services/api.client.js';
 import { AddBookmark } from './components/AddBookmark.js';
 import { BookmarkEditor } from './components/BookmarkEditor.js';
+import { useBookmarksChanged } from './hooks/useBookmarksChanged.js';
 import { Dashboard } from './pages/Dashboard.js';
 import { FoldersView } from './pages/FoldersView.js';
 import { Settings } from './pages/Settings.js';
@@ -19,6 +20,8 @@ export function App() {
   const refreshDashboard = useCallback(() => {
     setDashboardRefreshKey((key) => key + 1);
   }, []);
+
+  useBookmarksChanged(refreshDashboard);
 
   function handleNavigate(mode) {
     setView('dashboard');

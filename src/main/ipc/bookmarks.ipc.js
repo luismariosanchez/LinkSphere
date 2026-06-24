@@ -7,11 +7,21 @@ function getWindowFromEvent(event) {
   return BrowserWindow.fromWebContents(event.sender);
 }
 
+function notifyBookmarksChanged() {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) {
+      window.webContents.send(IPC_CHANNELS.BOOKMARKS_CHANGED);
+    }
+  }
+}
+
 export function registerBookmarksIpcHandlers() {
   const useCases = () => getBookmarkUseCases();
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_CREATE, async (_event, input) => {
-    return useCases().create.execute(input);
+    const created = await useCases().create.execute(input);
+    notifyBookmarksChanged();
+    return created;
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_ALL, () => {

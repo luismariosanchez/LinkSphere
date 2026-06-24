@@ -204,4 +204,36 @@ export const apiClient = {
       return getApi().rules.deleteRule(type, id);
     },
   },
+
+  quickAdd: {
+    hide() {
+      return getApi().quickAdd.hide();
+    },
+
+    getInitial() {
+      return getApi().quickAdd.getInitial();
+    },
+
+    preview(url) {
+      return getApi().quickAdd.preview(url);
+    },
+
+    onShown(callback) {
+      const api = getApi();
+      if (!api.quickAdd?.onShown) {
+        return () => {};
+      }
+      return api.quickAdd.onShown(callback);
+    },
+  },
+
+  bookmarksChanged: {
+    onChanged(callback) {
+      const api = getApi();
+      if (!api.bookmarksChanged?.onChanged) {
+        return () => {};
+      }
+      return api.bookmarksChanged.onChanged(callback);
+    },
+  },
 };
