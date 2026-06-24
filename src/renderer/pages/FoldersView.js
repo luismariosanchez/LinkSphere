@@ -8,6 +8,7 @@ import { EmptyState } from '../components/EmptyState.js';
 import { FolderTile } from '../components/FolderTile.js';
 import { LoadingState } from '../components/LoadingState.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { useFolderActions } from '../hooks/useFolderActions.js';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const BOOKMARKS_PAGE_SIZE = 50;
@@ -152,6 +153,15 @@ export function FoldersView({ refreshKey = 0 }) {
     void loadViewData();
   }
 
+  const folderMenuActions = useFolderActions({
+    onChanged: handleSaved,
+    onDeleted: (folder) => {
+      if (activeFolderId === folder.id) {
+        handleBackToList();
+      }
+    },
+  });
+
   function handleTagCreated(tag) {
     setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name)));
   }
@@ -206,6 +216,7 @@ export function FoldersView({ refreshKey = 0 }) {
                     folder={folder}
                     showPin
                     onClick={handleSelectFolder}
+                    menuActions={folderMenuActions}
                   />
                 ))}
               </div>
@@ -226,6 +237,7 @@ export function FoldersView({ refreshKey = 0 }) {
                     key={folder.id}
                     folder={folder}
                     onClick={handleSelectFolder}
+                    menuActions={folderMenuActions}
                   />
                 ))}
               </div>

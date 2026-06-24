@@ -13,11 +13,6 @@ export function NewsCarousel({ items, onOpen, onEdit, menuActions = null }) {
   return (
     <DashboardSection
       title="Novedades"
-      headerAction={(
-        <button type="button" className="dashboard-section__arrow" aria-label="Ver más">
-          <img src={arrowIcon} alt="" />
-        </button>
-      )}
     >
       <div
         ref={ref}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiClient } from '../services/api.client.js';
+import { ContextMenu } from './ContextMenu.js';
 
 function countBookmarks(bookmarks, folderId) {
   if (folderId === 'all') {
@@ -22,6 +23,7 @@ export function FolderPanel({
   onSelectFolder,
   onFolderCreated,
   onFolderDeleted,
+  menuActions = null,
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -115,35 +117,98 @@ export function FolderPanel({
 
         <ul className="folder-panel__list">
           {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                className={
-                  selectedFolderId === item.id
-                    ? 'folder-panel__item folder-panel__item--active'
-                    : 'folder-panel__item'
-                }
-                onClick={() => {
-                  onSelectFolder?.(item.id);
-                  onClose();
-                }}
-              >
-                <span>{item.name}</span>
-                <span className="folder-panel__count">{countBookmarks(bookmarks, item.id)}</span>
-              </button>
-              {item.deletable && (
-                <button
-                  type="button"
-                  className="folder-panel__delete"
-                  onClick={(event) => handleDelete(item, event)}
-                >
-                  ×
-                </button>
-              )}
-            </li>
+            <FolderPanelItem
+              key={item.id}
+              item={item}
+              selectedFolderId={selectedFolderId}
+              bookmarkCount={countBookmarks(bookmarks, item.id)}
+              menuActions={item.deletable ? menuActions : null}
+              onSelectFolder={() => {
+                onSelectFolder?.(item.id);
+                onClose();
+              }}
+              onDelete={(event) => handleDelete(item, event)}
+            />
           ))}
         </ul>
       </aside>
     </div>
+  );
+}
+
+function FolderPanelItem({
+  item,
+  selectedFolderId,
+  bookmarkCount,
+  menuActions,
+  onSelectFolder,
+  onDelete,
+}) {
+  const [menuPosition, setMenuPosition] = useState(null);
+  const isPinned = item.pinOrder != null;
+
+  function handleContextMenu(event) {
+    if (!menuActions) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    setMenuPosition({ x: event.clientX, y: event.clientY });
+  }
+
+  const contextMenuItems = menuActions ? [
+    {
+      id: 'rename',
+      label: 'Editar nombre',
+      onClick: () => menuActions.rename(item),
+    },
+    {
+      id: 'pin',
+      label: isPinned ? 'Quitar de acceso rápido' : 'Añadir a acceso rápido',
+      onClick: () => menuActions.togglePin(item),
+    },
+    {
+      id: 'delete',
+      label: 'Eliminar carpeta',
+      danger: true,
+      onClick: () => menuActions.delete(item),
+    },
+  ] : [];
+
+  return (
+    <li>
+      <button
+        type="button"
+        className={
+          selectedFolderId === item.id
+            ? 'folder-panel__item folder-panel__item--active'
+            : 'folder-panel__item'
+        }
+        onClick={onSelectFolder}
+        onContextMenu={handleContextMenu}
+      >
+        <span>{item.name}</span>
+        <span className="folder-panel__count">{bookmarkCount}</span>
+      </button>
+      {item.deletable && (
+        <button
+          type="button"
+          className="folder-panel__delete"
+          onClick={onDelete}
+        >
+          ×
+        </button>
+      )}
+
+      {menuPosition && (
+        <ContextMenu
+          x={menuPosition.x}
+          y={menuPosition.y}
+          items={contextMenuItems}
+          onClose={() => setMenuPosition(null)}
+        />
+      )}
+    </li>
   );
 }

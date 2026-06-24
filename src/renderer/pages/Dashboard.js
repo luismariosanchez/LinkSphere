@@ -11,6 +11,7 @@ import { NewsCarousel } from '../components/NewsCarousel.js';
 import { QuickAccessFolders } from '../components/QuickAccessFolders.js';
 import { SearchBar } from '../components/SearchBar.js';
 import { useBookmarkActions } from '../hooks/useBookmarkActions.js';
+import { useFolderActions } from '../hooks/useFolderActions.js';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const BOOKMARKS_PAGE_SIZE = 50;
@@ -218,6 +219,11 @@ export function Dashboard({
     onChanged: handleSaved,
   });
 
+  const folderMenuActions = useFolderActions({
+    onChanged: handleSaved,
+    onDeleted: (folder) => handleFolderDeleted(folder.id),
+  });
+
   function handleTagCreated(tag) {
     setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name)));
   }
@@ -333,6 +339,7 @@ export function Dashboard({
           <QuickAccessFolders
             folders={pinnedFolders}
             onSelect={handleSelectFolder}
+            menuActions={folderMenuActions}
           />
 
           <section className="dashboard-section dashboard-section--grid">
@@ -400,6 +407,7 @@ export function Dashboard({
         onSelectFolder={handleSelectFolder}
         onFolderCreated={handleFolderCreated}
         onFolderDeleted={handleFolderDeleted}
+        menuActions={folderMenuActions}
       />
 
       {editingId && (
