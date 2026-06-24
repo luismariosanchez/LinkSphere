@@ -1,4 +1,4 @@
-# Marcadores
+# LinkSphere
 
 A desktop bookmark manager built with **Electron**, **React**, and **SQLite**. Save URLs, enrich them with metadata from specialized providers, organize them with folders and tags, and keep them up to date with automatic background rescans.
 
