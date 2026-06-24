@@ -1,6 +1,16 @@
 import path from 'node:path';
 import { app } from 'electron';
-import { BookmarkService } from '../../core/bookmarks/bookmark.service.js';
+import {
+  BookmarkInteractionService,
+  BookmarkQueryService,
+  BookmarkService,
+} from '../../core/services/bookmarks/index.js';
+import { createBookmarkUseCases } from '../../core/use-cases/bookmarks/index.js';
+import { GetDashboardDataUseCase } from '../../core/use-cases/dashboard/get-dashboard-data.use-case.js';
+import { GetFoldersViewDataUseCase } from '../../core/use-cases/folders/get-folders-view-data.use-case.js';
+import { GetFoldersUseCase } from '../../core/use-cases/folders/get-folders.use-case.js';
+import { DashboardService } from '../../core/services/dashboard/dashboard.service.js';
+import { FoldersViewService } from '../../core/services/folders/folders-view.service.js';
 import { initDebugLogger, SettingsService } from '../../core/config/index.js';
 import {
   closeDatabase,
@@ -18,7 +28,7 @@ import {
 import { ProviderManager } from '../../core/providers/provider-manager.js';
 import { SchedulerService } from '../../core/scheduler/scheduler.service.js';
 import { WatcherService } from '../../core/scheduler/watcher.service.js';
-import { EventService } from '../../core/services/event.service.js';
+import { EventService } from '../../core/events/index.js';
 import { TagSuggestionService } from '../../core/tags/index.js';
 import { FolderService } from '../../core/folders/index.js';
 import { OrganizationSuggestionService } from '../../core/suggestions/index.js';
@@ -27,7 +37,15 @@ import { FolderSuggestionService } from '../../core/folders/folder-suggestion.se
 let repositories = null;
 let eventService = null;
 let watcherService = null;
-let bookmarkService = null;
+let bookmarkCrudService = null;
+let bookmarkQueryService = null;
+let bookmarkInteractionService = null;
+let bookmarkUseCases = null;
+let dashboardService = null;
+let foldersViewService = null;
+let dashboardUseCase = null;
+let foldersViewUseCase = null;
+let foldersUseCase = null;
 let schedulerService = null;
 let tagSuggestionService = null;
 let folderService = null;
@@ -241,24 +259,143 @@ export function getWatcherService() {
   return watcherService;
 }
 
-export function getBookmarkService() {
-  if (bookmarkService) {
-    return bookmarkService;
-  }
-
+function getBookmarkServiceDeps() {
   const repos = getRepositories();
-  bookmarkService = new BookmarkService({
+
+  return {
     bookmarksRepo: repos.bookmarks,
     tagsRepo: repos.tags,
     folderService: getFolderService(),
     eventService: getEventService(),
     providerManager: new ProviderManager(),
-    watcherService: getWatcherService(),
     tagSuggestionService: getTagSuggestionService(),
     settingsService: getSettingsService(),
+  };
+}
+
+export function getBookmarkCrudService() {
+  if (bookmarkCrudService) {
+    return bookmarkCrudService;
+  }
+
+  bookmarkCrudService = new BookmarkService(getBookmarkServiceDeps());
+  return bookmarkCrudService;
+}
+
+export function getBookmarkQueryService() {
+  if (bookmarkQueryService) {
+    return bookmarkQueryService;
+  }
+
+  const repos = getRepositories();
+  bookmarkQueryService = new BookmarkQueryService({
+    bookmarksRepo: repos.bookmarks,
+    folderService: getFolderService(),
+    eventService: getEventService(),
   });
 
-  return bookmarkService;
+  return bookmarkQueryService;
+}
+
+export function getBookmarkInteractionService() {
+  if (bookmarkInteractionService) {
+    return bookmarkInteractionService;
+  }
+
+  const repos = getRepositories();
+  bookmarkInteractionService = new BookmarkInteractionService({
+    bookmarksRepo: repos.bookmarks,
+    watcherService: getWatcherService(),
+  });
+
+  return bookmarkInteractionService;
+}
+
+/** @deprecated Use getBookmarkCrudService, getBookmarkQueryService or getBookmarkInteractionService */
+export function getBookmarkService() {
+  return getBookmarkCrudService();
+}
+
+export function getBookmarkUseCases() {
+  if (bookmarkUseCases) {
+    return bookmarkUseCases;
+  }
+
+  bookmarkUseCases = createBookmarkUseCases({
+    bookmarkService: getBookmarkCrudService(),
+    bookmarkQueryService: getBookmarkQueryService(),
+    bookmarkInteractionService: getBookmarkInteractionService(),
+  });
+
+  return bookmarkUseCases;
+}
+
+export function getDashboardService() {
+  if (dashboardService) {
+    return dashboardService;
+  }
+
+  const repos = getRepositories();
+  dashboardService = new DashboardService({
+    bookmarkCrudService: getBookmarkCrudService(),
+    bookmarkQueryService: getBookmarkQueryService(),
+    folderService: getFolderService(),
+    tagsRepo: repos.tags,
+    getLatestEvents: (limit) => getBookmarkUseCases().getLatestEvents.execute(limit),
+  });
+
+  return dashboardService;
+}
+
+export function getFoldersViewService() {
+  if (foldersViewService) {
+    return foldersViewService;
+  }
+
+  const repos = getRepositories();
+  foldersViewService = new FoldersViewService({
+    folderService: getFolderService(),
+    bookmarkQueryService: getBookmarkQueryService(),
+    tagsRepo: repos.tags,
+  });
+
+  return foldersViewService;
+}
+
+export function getDashboardUseCase() {
+  if (dashboardUseCase) {
+    return dashboardUseCase;
+  }
+
+  dashboardUseCase = new GetDashboardDataUseCase({
+    dashboardService: getDashboardService(),
+  });
+
+  return dashboardUseCase;
+}
+
+export function getFoldersViewUseCase() {
+  if (foldersViewUseCase) {
+    return foldersViewUseCase;
+  }
+
+  foldersViewUseCase = new GetFoldersViewDataUseCase({
+    foldersViewService: getFoldersViewService(),
+  });
+
+  return foldersViewUseCase;
+}
+
+export function getFoldersUseCase() {
+  if (foldersUseCase) {
+    return foldersUseCase;
+  }
+
+  foldersUseCase = new GetFoldersUseCase({
+    folderService: getFolderService(),
+  });
+
+  return foldersUseCase;
 }
 
 export function getSchedulerService() {
@@ -292,7 +429,15 @@ export function shutdownDatabase() {
   repositories = null;
   eventService = null;
   watcherService = null;
-  bookmarkService = null;
+  bookmarkCrudService = null;
+  bookmarkQueryService = null;
+  bookmarkInteractionService = null;
+  bookmarkUseCases = null;
+  dashboardService = null;
+  foldersViewService = null;
+  dashboardUseCase = null;
+  foldersViewUseCase = null;
+  foldersUseCase = null;
   tagSuggestionService = null;
   folderService = null;
   folderSuggestionService = null;

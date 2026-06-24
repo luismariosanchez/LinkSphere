@@ -1,60 +1,68 @@
 import fs from 'node:fs/promises';
-import { BrowserWindow, dialog, ipcMain } from 'electron';
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { IPC_CHANNELS } from '../../shared/ipcChannels.js';
-import { getBookmarkService } from '../database/context.js';
+import { getBookmarkUseCases } from '../database/context.js';
 
 function getWindowFromEvent(event) {
   return BrowserWindow.fromWebContents(event.sender);
 }
 
 export function registerBookmarksIpcHandlers() {
+  const useCases = () => getBookmarkUseCases();
+
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_CREATE, async (_event, input) => {
-    return getBookmarkService().create(input);
+    return useCases().create.execute(input);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_ALL, () => {
-    return getBookmarkService().getAll();
+    return useCases().get.executeAll();
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_BY_ID, (_event, id) => {
-    return getBookmarkService().getById(id);
+    return useCases().get.executeById(id);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_WITH_STATE, (_event, id) => {
-    return getBookmarkService().getWithState(id);
+    return useCases().get.executeWithState(id);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_RESCAN, async (_event, id) => {
-    return getBookmarkService().rescan(id);
+    return useCases().rescan.execute(id);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_UPDATE, (_event, id, input) => {
-    return getBookmarkService().update(id, input);
+    return useCases().update.execute(id, input);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_DELETE, (_event, id) => {
-    return getBookmarkService().delete(id);
+    return useCases().delete.execute(id);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_RECENT, (_event, limit) => {
-    return getBookmarkService().getRecentBookmarks(limit);
+    return useCases().get.executeRecent(limit);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_FAVORITES, () => {
-    return getBookmarkService().getFavoriteBookmarks();
+    return useCases().get.executeFavorites();
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_QUERY, (_event, filters) => {
-    return getBookmarkService().queryBookmarks(filters);
+    return useCases().get.executeQuery(filters);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_BY_FOLDER, (_event, folderId, options) => {
-    return getBookmarkService().getBookmarksByFolder(folderId, options);
+    return useCases().getByFolder.execute(folderId, options);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_OPEN, async (_event, input) => {
+    const result = useCases().open.execute(input);
+    await shell.openExternal(input.url);
+    return result;
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_EXPORT, async (event) => {
     const window = getWindowFromEvent(event);
-    const html = getBookmarkService().exportToHtml();
+    const html = useCases().export.execute();
     const { canceled, filePath } = await dialog.showSaveDialog(window, {
       title: 'Exportar bookmarks',
       defaultPath: 'bookmarks.html',
@@ -83,7 +91,7 @@ export function registerBookmarksIpcHandlers() {
     }
 
     const html = await fs.readFile(filePaths[0], 'utf8');
-    const result = await getBookmarkService().importFromHtml(html, {
+    const result = await useCases().import.execute(html, {
       onProgress: (progress) => {
         event.sender.send(IPC_CHANNELS.BOOKMARKS_IMPORT_PROGRESS, progress);
       },

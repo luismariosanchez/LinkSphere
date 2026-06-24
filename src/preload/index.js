@@ -30,6 +30,7 @@ const api = {
       folderId,
       options,
     ),
+    open: (input) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_OPEN, input),
     exportToFile: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_EXPORT),
     importFromFile: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_IMPORT),
     onImportProgress: (callback) => {
@@ -39,6 +40,10 @@ const api = {
         ipcRenderer.removeListener(IPC_CHANNELS.BOOKMARKS_IMPORT_PROGRESS, handler);
       };
     },
+  },
+
+  dashboard: {
+    getData: (input) => ipcRenderer.invoke(IPC_CHANNELS.DASHBOARD_GET_DATA, input),
   },
 
   events: {
@@ -64,6 +69,7 @@ const api = {
     update: (id, input) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_UPDATE, id, input),
     delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_DELETE, id),
     suggest: (context) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_SUGGEST, context),
+    getViewData: (input) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_GET_VIEW_DATA, input),
   },
 
   suggestions: {

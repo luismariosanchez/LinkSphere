@@ -1,2 +1,1 @@
-export { EventService } from './event.service.js';
-export { detectBookmarkEvents } from './bookmark-change.detector.js';
+export { EventService, detectBookmarkEvents } from '../events/index.js';

@@ -13,4 +13,4 @@ export {
   TagRepository,
   EventRepository,
   createRepositories,
-} from './repositories/index.js';
+} from '../repositories/index.js';

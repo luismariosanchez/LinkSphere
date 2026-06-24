@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../../shared/ipcChannels.js';
-import { getBookmarkService, getEventService } from '../database/context.js';
+import { getBookmarkUseCases, getEventService } from '../database/context.js';
 
 export function registerEventsIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.EVENTS_GET_ALL, () => {
@@ -12,6 +12,6 @@ export function registerEventsIpcHandlers() {
   });
 
   ipcMain.handle(IPC_CHANNELS.EVENTS_GET_LATEST, (_event, limit) => {
-    return getBookmarkService().getLatestEvents(limit);
+    return getBookmarkUseCases().getLatestEvents.execute(limit);
   });
 }

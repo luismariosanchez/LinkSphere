@@ -7,10 +7,6 @@ function getApi() {
 }
 
 export const apiClient = {
-  ping() {
-    return getApi().ping();
-  },
-
   app: {
     openExternal(url) {
       return getApi().app.openExternal(url);
@@ -76,6 +72,10 @@ export const apiClient = {
       return getApi().bookmarks.getByFolder(folderId, options);
     },
 
+    open(input) {
+      return getApi().bookmarks.open(input);
+    },
+
     exportToFile() {
       return getApi().bookmarks.exportToFile();
     },
@@ -90,6 +90,12 @@ export const apiClient = {
         return () => {};
       }
       return api.bookmarks.onImportProgress(callback);
+    },
+  },
+
+  dashboard: {
+    getData(input) {
+      return getApi().dashboard.getData(input);
     },
   },
 
@@ -168,6 +174,10 @@ export const apiClient = {
 
     suggest(context) {
       return getApi().folders.suggest(context);
+    },
+
+    getViewData(input) {
+      return getApi().folders.getViewData(input);
     },
   },
 

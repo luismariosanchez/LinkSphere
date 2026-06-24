@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { debugLog } from '../config/debug.logger.js';
 import { nowIso } from '../database/utils.js';
 import { extractStreamStatus, resolveBookmarkStatus } from '../providers/utils/stream-status.js';
-import { detectBookmarkEvents } from '../services/bookmark-change.detector.js';
+import { detectBookmarkEvents } from '../events/bookmark-change.detector.js';
 
 function computeStateHash(data) {
   return createHash('sha256').update(JSON.stringify(data)).digest('hex');

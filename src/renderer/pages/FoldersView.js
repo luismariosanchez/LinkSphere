@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../services/api.client.js';
 import { BookmarkEditor } from '../components/BookmarkEditor.js';
-import { BookmarkGrid } from '../components/BookmarkGrid.js';
+import { BookmarkList } from '../components/BookmarkList.js';
 import { DashboardHeader } from '../components/DashboardHeader.js';
+import { DashboardSection } from '../components/DashboardSection.js';
+import { EmptyState } from '../components/EmptyState.js';
 import { FolderTile } from '../components/FolderTile.js';
+import { LoadingState } from '../components/LoadingState.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 
-const BOOKMARKS_PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
+const BOOKMARKS_PAGE_SIZE = 50;
 
 const EMPTY_BOOKMARKS_PAGE = {
   items: [],
@@ -17,8 +20,10 @@ const EMPTY_BOOKMARKS_PAGE = {
 };
 
 export function FoldersView({ refreshKey = 0 }) {
-  const [folders, setFolders] = useState([]);
   const [tags, setTags] = useState([]);
+  const [pinnedFolders, setPinnedFolders] = useState([]);
+  const [filteredFolders, setFilteredFolders] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [activeFolderId, setActiveFolderId] = useState(null);
   const [activeFolder, setActiveFolder] = useState(null);
   const [bookmarksPage, setBookmarksPage] = useState(EMPTY_BOOKMARKS_PAGE);
@@ -26,7 +31,6 @@ export function FoldersView({ refreshKey = 0 }) {
   const [contentLoading, setContentLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
-
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -34,64 +38,67 @@ export function FoldersView({ refreshKey = 0 }) {
 
   const quickAccessRef = useDragScroll();
 
-  const loadFolders = useCallback(async () => {
-    setLoading(true);
+  const applyViewData = useCallback((data, { appendBookmarks = false } = {}) => {
+    setTags(data.tags);
+    setFolders(data.folders);
+    setPinnedFolders(data.pinnedFolders);
+    setFilteredFolders(data.filteredFolders);
+
+    if (data.folderNotFound) {
+      setError('Carpeta no encontrada');
+      setActiveFolderId(null);
+      setActiveFolder(null);
+      setBookmarksPage(EMPTY_BOOKMARKS_PAGE);
+      return;
+    }
+
+    if (data.folderDetail) {
+      setActiveFolder(data.folderDetail.folder);
+      setBookmarksPage((current) => ({
+        items: appendBookmarks
+          ? [...current.items, ...data.folderDetail.bookmarksPage.items]
+          : data.folderDetail.bookmarksPage.items,
+        total: data.folderDetail.bookmarksPage.total,
+        hasMore: data.folderDetail.bookmarksPage.hasMore,
+        offset: data.folderDetail.bookmarksPage.offset,
+      }));
+    } else {
+      setActiveFolder(null);
+      setBookmarksPage(EMPTY_BOOKMARKS_PAGE);
+    }
+  }, []);
+
+  const loadViewData = useCallback(async ({
+    appendBookmarks = false,
+    bookmarksOffset,
+    search = debouncedQuery,
+    folderId = activeFolderId,
+  } = {}) => {
+    if (appendBookmarks) {
+      setContentLoading(true);
+    } else {
+      setLoading(true);
+    }
+
     setError(null);
 
     try {
-      const [foldersData, tagsData] = await Promise.all([
-        apiClient.folders.getAllWithStats(),
-        apiClient.tags.getAll(),
-      ]);
+      const data = await apiClient.folders.getViewData({
+        search,
+        sortBy,
+        activeFolderId: folderId,
+        bookmarksOffset: bookmarksOffset ?? 0,
+        bookmarksLimit: BOOKMARKS_PAGE_SIZE,
+      });
 
-      setFolders(foldersData);
-      setTags(tagsData);
+      applyViewData(data, { appendBookmarks });
     } catch (err) {
       setError(err?.message ?? 'Error al cargar carpetas');
     } finally {
       setLoading(false);
-    }
-  }, []);
-
-  const loadFolderContent = useCallback(async (folderId, { reset = true, offset: offsetOverride, search } = {}) => {
-    setContentLoading(true);
-    setError(null);
-
-    try {
-      const folder = await apiClient.folders.getById(folderId);
-
-      if (!folder) {
-        setError('Carpeta no encontrada');
-        setActiveFolderId(null);
-        return;
-      }
-
-      const offset = reset ? 0 : (offsetOverride ?? 0);
-      const bookmarksResult = await apiClient.bookmarks.getByFolder(folderId, {
-        offset,
-        limit: BOOKMARKS_PAGE_SIZE,
-        sortBy: 'title',
-        sortDir: 'asc',
-        search: search?.trim() || undefined,
-      });
-
-      setActiveFolder(folder);
-      setBookmarksPage((current) => ({
-        items: reset ? bookmarksResult.items : [...current.items, ...bookmarksResult.items],
-        total: bookmarksResult.total,
-        hasMore: bookmarksResult.hasMore,
-        offset: offset + bookmarksResult.items.length,
-      }));
-    } catch (err) {
-      setError(err?.message ?? 'Error al cargar contenido de carpeta');
-    } finally {
       setContentLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    void loadFolders();
-  }, [loadFolders, refreshKey]);
+  }, [activeFolderId, applyViewData, debouncedQuery, sortBy]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query), SEARCH_DEBOUNCE_MS);
@@ -99,38 +106,8 @@ export function FoldersView({ refreshKey = 0 }) {
   }, [query]);
 
   useEffect(() => {
-    if (!activeFolderId) {
-      setActiveFolder(null);
-      setBookmarksPage(EMPTY_BOOKMARKS_PAGE);
-      return;
-    }
-
-    void loadFolderContent(activeFolderId, { reset: true, search: debouncedQuery });
-  }, [activeFolderId, debouncedQuery, loadFolderContent, refreshKey]);
-
-  const pinnedFolders = useMemo(
-    () => folders.filter((folder) => folder.pinOrder != null),
-    [folders],
-  );
-
-  const filteredFolders = useMemo(() => {
-    const normalized = debouncedQuery.trim().toLowerCase();
-
-    let list = folders;
-
-    if (normalized) {
-      list = list.filter((folder) => folder.name.toLowerCase().includes(normalized));
-    }
-
-    return [...list].sort((a, b) => {
-      if (sortBy === 'count') {
-        const diff = (b.stats?.bookmarkCount ?? 0) - (a.stats?.bookmarkCount ?? 0);
-        return diff !== 0 ? diff : a.name.localeCompare(b.name);
-      }
-
-      return a.name.localeCompare(b.name);
-    });
-  }, [debouncedQuery, folders, sortBy]);
+    void loadViewData({ search: debouncedQuery, folderId: activeFolderId });
+  }, [refreshKey, sortBy, debouncedQuery, activeFolderId, loadViewData]);
 
   function handleSelectFolder(folder) {
     setActiveFolderId(folder.id);
@@ -144,27 +121,35 @@ export function FoldersView({ refreshKey = 0 }) {
     setDebouncedQuery('');
   }
 
-  function handleOpenBookmark(bookmark) {
-    void apiClient.app.openExternal(bookmark.url);
+  async function handleOpenBookmark(bookmark) {
+    const { bookmark: updated } = await apiClient.bookmarks.open({
+      url: bookmark.url,
+      bookmarkId: bookmark.id,
+    });
 
-    const openedAt = new Date().toISOString();
+    if (!updated) {
+      return;
+    }
 
     setBookmarksPage((current) => ({
       ...current,
       items: current.items.map((item) => (
-        item.id === bookmark.id
-          ? { ...item, lastOpenedAt: openedAt, openCount: (item.openCount ?? 0) + 1 }
+        item.bookmark.id === bookmark.id
+          ? {
+              ...item,
+              bookmark: {
+                ...item.bookmark,
+                lastOpenedAt: updated.lastOpenedAt,
+                openCount: updated.openCount,
+              },
+            }
           : item
       )),
     }));
   }
 
   function handleSaved() {
-    void loadFolders();
-
-    if (activeFolderId) {
-      void loadFolderContent(activeFolderId, { reset: true, search: debouncedQuery });
-    }
+    void loadViewData();
   }
 
   function handleTagCreated(tag) {
@@ -206,11 +191,10 @@ export function FoldersView({ refreshKey = 0 }) {
 
       {isListView && (
         <>
-          {loading && <p className="muted">Cargando…</p>}
+          {loading && <LoadingState />}
 
           {!loading && pinnedFolders.length > 0 && (
-            <section className="dashboard-section">
-              <h2 className="dashboard-section__title">Acceso rápido</h2>
+            <DashboardSection title="Acceso rápido">
               <div
                 ref={quickAccessRef.ref}
                 className="folders-quick-access scrollbar-hidden"
@@ -225,18 +209,14 @@ export function FoldersView({ refreshKey = 0 }) {
                   />
                 ))}
               </div>
-            </section>
+            </DashboardSection>
           )}
 
-          <section className="dashboard-section">
-            <h2 className="dashboard-section__title">Todas las carpetas</h2>
-
+          <DashboardSection title="Todas las carpetas" className="folders-section--all">
             {!loading && filteredFolders.length === 0 && !error && (
-              <div className="empty-state empty-state--dark">
-                <p className="muted">
-                  {debouncedQuery ? 'No hay carpetas que coincidan.' : 'No hay carpetas todavía.'}
-                </p>
-              </div>
+              <EmptyState
+                message={debouncedQuery ? 'No hay carpetas que coincidan.' : 'No hay carpetas todavía.'}
+              />
             )}
 
             {filteredFolders.length > 0 && (
@@ -250,7 +230,7 @@ export function FoldersView({ refreshKey = 0 }) {
                 ))}
               </div>
             )}
-          </section>
+          </DashboardSection>
         </>
       )}
 
@@ -268,22 +248,16 @@ export function FoldersView({ refreshKey = 0 }) {
             <span className="folders-breadcrumb__current">{activeFolder.name}</span>
           </nav>
 
-          {contentLoading && bookmarksPage.items.length === 0 && (
-            <p className="muted">Cargando…</p>
-          )}
+          {contentLoading && bookmarksPage.items.length === 0 && <LoadingState />}
 
           {!contentLoading && bookmarksPage.total === 0 && !error && (
-            <div className="empty-state empty-state--dark">
-              <p className="muted">Esta carpeta está vacía.</p>
-            </div>
+            <EmptyState message="Esta carpeta está vacía." />
           )}
 
           {bookmarksPage.items.length > 0 && (
             <>
-              <BookmarkGrid
-                bookmarks={bookmarksPage.items}
-                tags={tags}
-                folders={folders}
+              <BookmarkList
+                items={bookmarksPage.items}
                 onEdit={(bookmark) => setEditingId(bookmark.id)}
                 onOpen={handleOpenBookmark}
               />
@@ -293,9 +267,9 @@ export function FoldersView({ refreshKey = 0 }) {
                   type="button"
                   className="btn-secondary bookmarks-load-more"
                   disabled={contentLoading}
-                  onClick={() => void loadFolderContent(activeFolderId, {
-                    reset: false,
-                    offset: bookmarksPage.offset,
+                  onClick={() => void loadViewData({
+                    appendBookmarks: true,
+                    bookmarksOffset: bookmarksPage.offset,
                     search: debouncedQuery,
                   })}
                 >

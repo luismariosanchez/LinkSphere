@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../../shared/ipcChannels.js';
-import { getFolderService } from '../database/context.js';
+import { getFolderService, getFoldersViewUseCase } from '../database/context.js';
 
 const FOLDER_HANDLERS = [
   IPC_CHANNELS.FOLDERS_GET_ALL,
@@ -53,5 +53,9 @@ export function registerFoldersIpcHandlers() {
 
   ipcMain.handle(IPC_CHANNELS.FOLDERS_SUGGEST, (_event, context) => {
     return getFolderService().suggest(context);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FOLDERS_GET_VIEW_DATA, (_event, input) => {
+    return getFoldersViewUseCase().execute(input ?? {});
   });
 }

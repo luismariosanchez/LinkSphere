@@ -2,8 +2,6 @@ import { useState } from 'react';
 import folderIcon from '../assets/icons/folder_in_bookmark_card_icon.svg';
 import internetIcon from '../assets/icons/internet-svgrepo-com.svg';
 import { TagChip } from './TagChip.js';
-import { getStatusLabel, getTypeLabel } from '../utils/bookmarks.js';
-import { resolveCardBadge } from '../utils/news.js';
 
 function BookmarkCardThumbnail({ thumbnail }) {
   const [hasError, setHasError] = useState(false);
@@ -30,20 +28,18 @@ function BookmarkCardThumbnail({ thumbnail }) {
 
 export function BookmarkCard({
   bookmark,
-  tags,
+  tags = [],
   folderName,
   isFolderPinned = false,
-  lastEvent,
+  badge = null,
+  providerLabel,
+  statusLabel,
+  tagLabel,
+  isDown = false,
   onOpen,
   onEdit,
   className = '',
 }) {
-  const badge = resolveCardBadge(bookmark, lastEvent);
-  const isDown = bookmark.lastStatus === 'dead' || bookmark.lastStatus === 'error';
-  const tagLabel = tags[0]?.name ?? getTypeLabel(bookmark.type);
-  const providerLabel = getTypeLabel(bookmark.type);
-  const statusLabel = getStatusLabel(bookmark.lastStatus);
-
   function handleCardClick() {
     onOpen?.(bookmark);
   }
@@ -105,7 +101,7 @@ export function BookmarkCard({
 
         <div className="bookmark-card__meta">
           <span className="bookmark-card__provider">{providerLabel}</span>
-          {!isDown && (
+          {!isDown && statusLabel && (
             <span className={`bookmark-card__status bookmark-card__status--${bookmark.lastStatus}`}>
               {statusLabel}
             </span>

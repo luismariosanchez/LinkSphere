@@ -11,10 +11,7 @@ export function resolveCardBadge(bookmark, lastEvent) {
     return { text: 'Offline', variant: 'offline' };
   }
 
-  // TODO: badge "New episode" — funcionalidad pendiente
-  // if (lastEvent && ['YOUTUBE_NEW_VIDEO', 'TITLE_CHANGED', 'THUMBNAIL_CHANGED'].includes(lastEvent.type)) {
-  //   return { text: 'New episode', variant: 'new' };
-  // }
+  void lastEvent;
 
   return null;
 }

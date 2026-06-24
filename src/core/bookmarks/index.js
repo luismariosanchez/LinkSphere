@@ -1,1 +1,5 @@
-export { BookmarkService } from './bookmark.service.js';
+export {
+  BookmarkService,
+  BookmarkQueryService,
+  BookmarkInteractionService,
+} from '../services/bookmarks/index.js';

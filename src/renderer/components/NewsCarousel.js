@@ -1,9 +1,9 @@
 import arrowIcon from '../assets/icons/arrow_rigth.svg';
 import { BookmarkCard } from './BookmarkCard.js';
+import { DashboardSection } from './DashboardSection.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
-import { resolveBookmarkTags } from '../utils/bookmarks.js';
 
-export function NewsCarousel({ items, tagMap, onOpen, onEdit }) {
+export function NewsCarousel({ items, onOpen, onEdit }) {
   const { ref, dragHandlers } = useDragScroll();
 
   if (items.length === 0) {
@@ -11,32 +11,37 @@ export function NewsCarousel({ items, tagMap, onOpen, onEdit }) {
   }
 
   return (
-    <section className="dashboard-section">
-      <div className="dashboard-section__header">
-        <h2 className="dashboard-section__title">Novedades</h2>
+    <DashboardSection
+      title="Novedades"
+      headerAction={(
         <button type="button" className="dashboard-section__arrow" aria-label="Ver más">
           <img src={arrowIcon} alt="" />
         </button>
-      </div>
-
+      )}
+    >
       <div
         ref={ref}
         className="news-carousel scrollbar-hidden"
         {...dragHandlers}
       >
-        {items.map(({ bookmark, event, folderName }) => (
+        {items.map(({ event, card }) => (
           <BookmarkCard
             key={event.id}
             className="bookmark-card--carousel"
-            bookmark={bookmark}
-            tags={resolveBookmarkTags(bookmark, tagMap)}
-            folderName={folderName}
-            lastEvent={event}
+            bookmark={card.bookmark}
+            tags={card.tags}
+            folderName={card.folderName}
+            isFolderPinned={card.isFolderPinned}
+            badge={card.badge}
+            providerLabel={card.providerLabel}
+            statusLabel={card.statusLabel}
+            tagLabel={card.tagLabel}
+            isDown={card.isDown}
             onOpen={onOpen}
             onEdit={onEdit}
           />
         ))}
       </div>
-    </section>
+    </DashboardSection>
   );
 }
