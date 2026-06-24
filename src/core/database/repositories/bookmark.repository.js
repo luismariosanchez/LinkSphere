@@ -16,6 +16,10 @@ function mapBookmarkRow(row) {
     createdAt: row.created_at,
     lastChecked: row.last_checked,
     lastStatus: row.last_status,
+    isFavorite: Boolean(row.is_favorite),
+    pinOrder: row.pin_order ?? null,
+    lastOpenedAt: row.last_opened_at ?? null,
+    openCount: row.open_count ?? 0,
   };
 }
 
@@ -62,9 +66,11 @@ export class BookmarkRepository {
 
     const insert = this.db.prepare(`
       INSERT INTO bookmarks (
-        id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status
+        id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status,
+        is_favorite, pin_order, last_opened_at, open_count
       ) VALUES (
-        @id, @url, @title, @type, @folderId, @thumbnail, @createdAt, @lastChecked, @lastStatus
+        @id, @url, @title, @type, @folderId, @thumbnail, @createdAt, @lastChecked, @lastStatus,
+        @isFavorite, @pinOrder, @lastOpenedAt, @openCount
       )
     `);
 
@@ -79,6 +85,10 @@ export class BookmarkRepository {
         createdAt: data.createdAt,
         lastChecked: data.lastChecked ?? null,
         lastStatus: data.lastStatus ?? 'ok',
+        isFavorite: data.isFavorite ? 1 : 0,
+        pinOrder: data.pinOrder ?? null,
+        lastOpenedAt: data.lastOpenedAt ?? null,
+        openCount: data.openCount ?? 0,
       });
 
       if (data.tagIds?.length) {
@@ -100,9 +110,71 @@ export class BookmarkRepository {
     return this.#attachTags(mapBookmarkRow(row));
   }
 
+  getByUrl(url) {
+    const row = this.db.prepare('SELECT * FROM bookmarks WHERE url = ?').get(url);
+    return this.#attachTags(mapBookmarkRow(row));
+  }
+
   getAll() {
     const rows = this.db.prepare('SELECT * FROM bookmarks ORDER BY created_at DESC').all();
     return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+  }
+
+  getRecentBookmarks(limit = 10) {
+    const rows = this.db
+      .prepare(`
+        SELECT * FROM bookmarks
+        ORDER BY COALESCE(last_opened_at, created_at) DESC
+        LIMIT ?
+      `)
+      .all(limit);
+
+    return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+  }
+
+  getFavoriteBookmarks() {
+    const rows = this.db
+      .prepare(`
+        SELECT * FROM bookmarks
+        WHERE is_favorite = 1
+        ORDER BY created_at DESC
+      `)
+      .all();
+
+    return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+  }
+
+  getPinnedBookmarks() {
+    const rows = this.db
+      .prepare(`
+        SELECT * FROM bookmarks
+        WHERE pin_order IS NOT NULL
+        ORDER BY pin_order ASC, created_at DESC
+      `)
+      .all();
+
+    return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+  }
+
+  recordOpen(id) {
+    const existing = this.getById(id);
+
+    if (!existing) {
+      return null;
+    }
+
+    const openedAt = nowIso();
+
+    this.db
+      .prepare(`
+        UPDATE bookmarks
+        SET last_opened_at = @openedAt,
+            open_count = open_count + 1
+        WHERE id = @id
+      `)
+      .run({ id, openedAt });
+
+    return this.getById(id);
   }
 
   update(id, input) {
@@ -141,6 +213,22 @@ export class BookmarkRepository {
     if (input.lastStatus !== undefined) {
       fields.push('last_status = @lastStatus');
       params.lastStatus = input.lastStatus;
+    }
+    if (input.isFavorite !== undefined) {
+      fields.push('is_favorite = @isFavorite');
+      params.isFavorite = input.isFavorite ? 1 : 0;
+    }
+    if (input.pinOrder !== undefined) {
+      fields.push('pin_order = @pinOrder');
+      params.pinOrder = input.pinOrder;
+    }
+    if (input.lastOpenedAt !== undefined) {
+      fields.push('last_opened_at = @lastOpenedAt');
+      params.lastOpenedAt = input.lastOpenedAt;
+    }
+    if (input.openCount !== undefined) {
+      fields.push('open_count = @openCount');
+      params.openCount = input.openCount;
     }
 
     const runUpdate = this.db.transaction(() => {

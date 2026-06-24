@@ -7,11 +7,9 @@ import { FolderPanel } from '../components/FolderPanel.js';
 import { GridFilters } from '../components/GridFilters.js';
 import { NewsCarousel } from '../components/NewsCarousel.js';
 import { QuickAccessFolders } from '../components/QuickAccessFolders.js';
-import {
-  buildTagMap,
-  resolveBookmarkTags,
-} from '../utils/bookmarks.js';
-import { buildNewsItems } from '../utils/news.js';
+import { buildTagMap } from '../utils/bookmarks.js';
+
+const NEWS_LIMIT = 12;
 
 export function Dashboard({
   refreshKey = 0,
@@ -22,46 +20,61 @@ export function Dashboard({
   const [bookmarks, setBookmarks] = useState([]);
   const [tags, setTags] = useState([]);
   const [folders, setFolders] = useState([]);
-  const [events, setEvents] = useState([]);
+  const [newsItems, setNewsItems] = useState([]);
+  const [pinnedBookmarks, setPinnedBookmarks] = useState([]);
+  const [gridBookmarks, setGridBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [selectedFolderId, setSelectedFolderId] = useState('all');
   const [folderPanelOpen, setFolderPanelOpen] = useState(false);
-
-  const [query, setQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [tagFilter, setTagFilter] = useState('');
   const [gridFilter, setGridFilter] = useState('recent');
 
+  const [query, setQuery] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [creating, setCreating] = useState(false);
+
+  const loadGridBookmarks = useCallback(async (filter) => {
+    const data = filter === 'favorites'
+      ? await apiClient.bookmarks.getFavorites()
+      : await apiClient.bookmarks.getRecent();
+
+    setGridBookmarks(data);
+  }, []);
+
+  const loadDashboardSections = useCallback(async (filter) => {
+    const [newsData, pinnedData] = await Promise.all([
+      apiClient.events.getLatest(NEWS_LIMIT),
+      apiClient.bookmarks.getPinned(),
+    ]);
+
+    setNewsItems(newsData);
+    setPinnedBookmarks(pinnedData);
+    await loadGridBookmarks(filter);
+  }, [loadGridBookmarks]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [bookmarksData, tagsData, eventsData] = await Promise.all([
+      const [bookmarksData, tagsData, foldersData] = await Promise.all([
         apiClient.bookmarks.getAll(),
         apiClient.tags.getAll(),
-        apiClient.events.getAll(),
+        apiClient.folders.getAll(),
       ]);
-
-      const foldersData = await apiClient.folders.getAll();
 
       setBookmarks(bookmarksData);
       setTags(tagsData);
       setFolders(foldersData);
-      setEvents(eventsData);
+      await loadDashboardSections(gridFilter);
     } catch (err) {
       setError(err?.message ?? 'Error al cargar datos');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [gridFilter, loadDashboardSections]);
 
   useEffect(() => {
     onRegisterCreate?.(() => setShowAddForm(true));
@@ -70,6 +83,14 @@ export function Dashboard({
   useEffect(() => {
     void loadData();
   }, [loadData, refreshKey]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    void loadGridBookmarks(gridFilter);
+  }, [gridFilter, loading, loadGridBookmarks]);
 
   useEffect(() => {
     if (dashboardMode === 'folders') {
@@ -130,12 +151,6 @@ export function Dashboard({
   }
 
   const tagMap = buildTagMap(tags);
-  const folderMap = Object.fromEntries(folders.map((f) => [f.id, f.name]));
-  const newsItems = buildNewsItems(bookmarks, events).map((item) => ({
-    ...item,
-    tags: resolveBookmarkTags(item.bookmark, tagMap),
-    folderName: item.bookmark.folderId ? folderMap[item.bookmark.folderId] : null,
-  }));
 
   function handleOpen(url) {
     void apiClient.app.openExternal(url);
@@ -167,7 +182,7 @@ export function Dashboard({
       )}
 
       {error && <p className="error">{error}</p>}
-      {loading && bookmarks.length === 0 && <p className="muted">Cargando…</p>}
+      {loading && <p className="muted">Cargando…</p>}
 
       {!loading && bookmarks.length === 0 && !error && (
         <div className="empty-state empty-state--dark">
@@ -176,32 +191,27 @@ export function Dashboard({
         </div>
       )}
 
-      {bookmarks.length > 0 && (
+      {!loading && (
         <>
           <NewsCarousel
             items={newsItems}
+            tagMap={tagMap}
             onOpen={handleOpen}
             onEdit={(bookmark) => setEditingId(bookmark.id)}
           />
 
           <QuickAccessFolders
-            folders={folders}
-            onSelectFolder={(id) => {
-              setSelectedFolderId(id);
-              setFolderPanelOpen(false);
-            }}
+            bookmarks={pinnedBookmarks}
+            onOpen={handleOpen}
           />
 
           <section className="dashboard-section dashboard-section--grid">
             <GridFilters value={gridFilter} onChange={setGridFilter} />
 
             <BookmarkGrid
-              bookmarks={bookmarks}
+              bookmarks={gridBookmarks}
               tags={tags}
               folders={folders}
-              selectedFolderId={selectedFolderId}
-              filters={{ query, typeFilter, statusFilter, tagFilter }}
-              events={events}
               onEdit={(bookmark) => setEditingId(bookmark.id)}
             />
           </section>

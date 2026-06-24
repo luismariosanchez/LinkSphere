@@ -18,32 +18,3 @@ export function resolveCardBadge(bookmark, lastEvent) {
 
   return null;
 }
-
-export function buildNewsItems(bookmarks, events, limit = 12) {
-  const bookmarkMap = Object.fromEntries(bookmarks.map((b) => [b.id, b]));
-  const latestEventByBookmark = {};
-
-  for (const event of events) {
-    if (!latestEventByBookmark[event.bookmarkId]) {
-      latestEventByBookmark[event.bookmarkId] = event;
-    }
-  }
-
-  const scored = bookmarks.map((bookmark) => {
-    const event = latestEventByBookmark[bookmark.id];
-    const score = event
-      ? new Date(event.createdAt).getTime()
-      : new Date(bookmark.createdAt).getTime();
-
-    return { bookmark, event, score };
-  });
-
-  return scored
-    .filter(({ bookmark, event }) => (
-      bookmark.lastStatus === 'live'
-      || bookmark.lastStatus === 'offline'
-      || event
-    ))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-}

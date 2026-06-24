@@ -207,6 +207,78 @@ export class BookmarkService {
     return this.bookmarksRepo.delete(id);
   }
 
+  recordOpen(bookmarkId) {
+    const updated = this.bookmarksRepo.recordOpen(bookmarkId);
+    debugLog('[BookmarkService] open tracked:', bookmarkId, updated?.openCount);
+    return updated;
+  }
+
+  #resolveBookmarkByUrl(url) {
+    if (!url) {
+      return null;
+    }
+
+    const direct = this.bookmarksRepo.getByUrl(url);
+
+    if (direct) {
+      return direct;
+    }
+
+    try {
+      return this.bookmarksRepo.getByUrl(normalizeUrl(url));
+    } catch {
+      return null;
+    }
+  }
+
+  recordOpenByUrl(url) {
+    const bookmark = this.#resolveBookmarkByUrl(url);
+
+    if (!bookmark) {
+      return null;
+    }
+
+    return this.recordOpen(bookmark.id);
+  }
+
+  getRecentBookmarks(limit = 10) {
+    return this.bookmarksRepo.getRecentBookmarks(limit);
+  }
+
+  getFavoriteBookmarks() {
+    return this.bookmarksRepo.getFavoriteBookmarks();
+  }
+
+  #resolveFolderName(folderId) {
+    if (!folderId) {
+      return null;
+    }
+
+    return this.folderService.getFolders().find((folder) => folder.id === folderId)?.name ?? null;
+  }
+
+  getPinnedBookmarks() {
+    return this.bookmarksRepo.getPinnedBookmarks();
+  }
+
+  getLatestEvents(limit = 20) {
+    return this.eventService.getLatestEvents(limit)
+      .map((event) => {
+        const bookmark = this.bookmarksRepo.getById(event.bookmarkId);
+
+        if (!bookmark) {
+          return null;
+        }
+
+        return {
+          event,
+          bookmark,
+          folderName: this.#resolveFolderName(bookmark.folderId),
+        };
+      })
+      .filter(Boolean);
+  }
+
   exportToHtml() {
     const bookmarks = this.bookmarksRepo.getAll();
     const folders = this.folderService.getFolders();

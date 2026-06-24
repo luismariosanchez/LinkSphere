@@ -11,3 +11,5 @@ export const EVENT_TYPES = {
   SITE_DOWN: 'SITE_DOWN',
   SITE_UP: 'SITE_UP',
 };
+
+export { ACTIVITY_EVENT_TYPES } from './activity-events.js';

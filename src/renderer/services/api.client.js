@@ -60,6 +60,18 @@ export const apiClient = {
       return getApi().bookmarks.delete(id);
     },
 
+    getRecent(limit) {
+      return getApi().bookmarks.getRecent(limit);
+    },
+
+    getFavorites() {
+      return getApi().bookmarks.getFavorites();
+    },
+
+    getPinned() {
+      return getApi().bookmarks.getPinned();
+    },
+
     exportToFile() {
       return getApi().bookmarks.exportToFile();
     },
@@ -84,6 +96,10 @@ export const apiClient = {
 
     getByBookmarkId(bookmarkId) {
       return getApi().events.getByBookmarkId(bookmarkId);
+    },
+
+    getLatest(limit) {
+      return getApi().events.getLatest(limit);
     },
   },
 

@@ -223,7 +223,19 @@
   display: flex;
   gap: 20px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 4px;
+  cursor: grab;
+  -webkit-overflow-scrolling: touch;
+}
+
+.news-carousel.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.news-carousel.is-dragging * {
+  pointer-events: none;
 }
 
 /* ── Bookmark card (Figma: thumb izq 105×129 + texto der) ── */

@@ -1,6 +1,6 @@
 import { ipcMain, shell } from 'electron';
 import { IPC_CHANNELS } from '../../shared/ipcChannels.js';
-import { wipeApplicationData } from '../database/context.js';
+import { getBookmarkService, wipeApplicationData } from '../database/context.js';
 
 export function registerAppIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.APP_PING, () => 'pong');
@@ -9,6 +9,8 @@ export function registerAppIpcHandlers() {
     if (!url || typeof url !== 'string') {
       throw new Error('URL inválida');
     }
+
+    getBookmarkService().recordOpenByUrl(url);
 
     return shell.openExternal(url);
   });

@@ -22,6 +22,9 @@ const api = {
     rescan: (id) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_RESCAN, id),
     update: (id, input) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_UPDATE, id, input),
     delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_DELETE, id),
+    getRecent: (limit) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_GET_RECENT, limit),
+    getFavorites: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_GET_FAVORITES),
+    getPinned: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_GET_PINNED),
     exportToFile: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_EXPORT),
     importFromFile: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_IMPORT),
     onImportProgress: (callback) => {
@@ -36,6 +39,7 @@ const api = {
   events: {
     getAll: () => ipcRenderer.invoke(IPC_CHANNELS.EVENTS_GET_ALL),
     getByBookmarkId: (bookmarkId) => ipcRenderer.invoke(IPC_CHANNELS.EVENTS_GET_BY_BOOKMARK_ID, bookmarkId),
+    getLatest: (limit) => ipcRenderer.invoke(IPC_CHANNELS.EVENTS_GET_LATEST, limit),
   },
 
   tags: {

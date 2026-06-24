@@ -16,9 +16,13 @@ export const IPC_CHANNELS = {
   BOOKMARKS_EXPORT: 'bookmarks:export',
   BOOKMARKS_IMPORT: 'bookmarks:import',
   BOOKMARKS_IMPORT_PROGRESS: 'bookmarks:importProgress',
+  BOOKMARKS_GET_RECENT: 'bookmarks:getRecent',
+  BOOKMARKS_GET_FAVORITES: 'bookmarks:getFavorites',
+  BOOKMARKS_GET_PINNED: 'bookmarks:getPinned',
 
   EVENTS_GET_ALL: 'events:getAll',
   EVENTS_GET_BY_BOOKMARK_ID: 'events:getByBookmarkId',
+  EVENTS_GET_LATEST: 'events:getLatest',
 
   TAGS_GET_ALL: 'tags:getAll',
   TAGS_CREATE: 'tags:create',

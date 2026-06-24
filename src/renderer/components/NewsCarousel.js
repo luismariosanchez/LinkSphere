@@ -1,7 +1,11 @@
 import arrowIcon from '../assets/icons/arrow_rigth.svg';
 import { BookmarkCard } from './BookmarkCard.js';
+import { useDragScroll } from '../hooks/useDragScroll.js';
+import { resolveBookmarkTags } from '../utils/bookmarks.js';
 
-export function NewsCarousel({ items, onOpen, onEdit }) {
+export function NewsCarousel({ items, tagMap, onOpen, onEdit }) {
+  const { ref, dragHandlers } = useDragScroll();
+
   if (items.length === 0) {
     return null;
   }
@@ -15,13 +19,17 @@ export function NewsCarousel({ items, onOpen, onEdit }) {
         </button>
       </div>
 
-      <div className="news-carousel scrollbar-hidden">
-        {items.map(({ bookmark, event, tags, folderName }) => (
+      <div
+        ref={ref}
+        className="news-carousel scrollbar-hidden"
+        {...dragHandlers}
+      >
+        {items.map(({ bookmark, event, folderName }) => (
           <BookmarkCard
-            key={bookmark.id}
+            key={event.id}
             className="bookmark-card--carousel"
             bookmark={bookmark}
-            tags={tags}
+            tags={resolveBookmarkTags(bookmark, tagMap)}
             folderName={folderName}
             lastEvent={event}
             onOpen={onOpen}

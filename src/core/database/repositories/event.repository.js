@@ -10,6 +10,7 @@ function mapEventRow(row) {
     id: row.id,
     bookmarkId: row.bookmark_id,
     type: row.type,
+    title: row.title ?? null,
     payload: parseJson(row.payload_json),
     createdAt: row.created_at,
   };
@@ -26,14 +27,15 @@ export class EventRepository {
 
     this.db
       .prepare(`
-        INSERT INTO events (id, bookmark_id, type, payload_json, created_at)
-        VALUES (@id, @bookmarkId, @type, @payloadJson, @createdAt)
+        INSERT INTO events (id, bookmark_id, type, title, payload_json, created_at)
+        VALUES (@id, @bookmarkId, @type, @title, @payloadJson, @createdAt)
       `)
       .run({
         id,
         bookmarkId: input.bookmarkId,
         type: input.type,
-        payloadJson: toJson(input.payload),
+        title: input.title ?? null,
+        payloadJson: toJson(input.payload ?? {}),
         createdAt,
       });
 
@@ -49,6 +51,18 @@ export class EventRepository {
     const rows = this.db
       .prepare('SELECT * FROM events ORDER BY created_at DESC')
       .all();
+
+    return rows.map(mapEventRow);
+  }
+
+  getLatest(limit = 20) {
+    const rows = this.db
+      .prepare(`
+        SELECT * FROM events
+        ORDER BY created_at DESC
+        LIMIT ?
+      `)
+      .all(limit);
 
     return rows.map(mapEventRow);
   }
@@ -69,6 +83,10 @@ export class EventRepository {
     if (input.type !== undefined) {
       fields.push('type = @type');
       params.type = input.type;
+    }
+    if (input.title !== undefined) {
+      fields.push('title = @title');
+      params.title = input.title;
     }
     if (input.payload !== undefined) {
       fields.push('payload_json = @payloadJson');

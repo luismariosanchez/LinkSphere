@@ -36,6 +36,18 @@ export function registerBookmarksIpcHandlers() {
     return getBookmarkService().delete(id);
   });
 
+  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_RECENT, (_event, limit) => {
+    return getBookmarkService().getRecentBookmarks(limit);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_FAVORITES, () => {
+    return getBookmarkService().getFavoriteBookmarks();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_PINNED, () => {
+    return getBookmarkService().getPinnedBookmarks();
+  });
+
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_EXPORT, async (event) => {
     const window = getWindowFromEvent(event);
     const html = getBookmarkService().exportToHtml();

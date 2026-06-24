@@ -16,7 +16,11 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   created_at TEXT NOT NULL,
   last_checked TEXT,
   last_status TEXT NOT NULL DEFAULT 'ok'
-    CHECK(last_status IN ('ok', 'dead', 'error', 'live', 'offline', 'unknown'))
+    CHECK(last_status IN ('ok', 'dead', 'error', 'live', 'offline', 'unknown')),
+  is_favorite INTEGER NOT NULL DEFAULT 0,
+  pin_order INTEGER,
+  last_opened_at TEXT,
+  open_count INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -41,6 +45,7 @@ CREATE TABLE IF NOT EXISTS events (
   id TEXT PRIMARY KEY,
   bookmark_id TEXT NOT NULL REFERENCES bookmarks(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
+  title TEXT,
   payload_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL
 );
@@ -79,14 +84,20 @@ function migrateBookmarkStatusConstraint(db) {
       created_at TEXT NOT NULL,
       last_checked TEXT,
       last_status TEXT NOT NULL DEFAULT 'ok'
-        CHECK(last_status IN ${BOOKMARK_STATUS_CHECK})
+        CHECK(last_status IN ${BOOKMARK_STATUS_CHECK}),
+      is_favorite INTEGER NOT NULL DEFAULT 0,
+      pin_order INTEGER,
+      last_opened_at TEXT,
+      open_count INTEGER NOT NULL DEFAULT 0
     );
 
     INSERT INTO bookmarks_migrated (
-      id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status
+      id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status,
+      is_favorite, pin_order, last_opened_at, open_count
     )
     SELECT
-      id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status
+      id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status,
+      0, NULL, NULL, 0
     FROM bookmarks;
 
     DROP TABLE bookmarks;
@@ -100,7 +111,44 @@ function migrateBookmarkStatusConstraint(db) {
   `);
 }
 
+function columnExists(db, table, column) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  return columns.some((entry) => entry.name === column);
+}
+
+function migrateBookmarkDashboardColumns(db) {
+  if (!columnExists(db, 'bookmarks', 'is_favorite')) {
+    db.exec('ALTER TABLE bookmarks ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0');
+  }
+
+  if (!columnExists(db, 'bookmarks', 'pin_order')) {
+    db.exec('ALTER TABLE bookmarks ADD COLUMN pin_order INTEGER');
+  }
+
+  if (!columnExists(db, 'bookmarks', 'last_opened_at')) {
+    db.exec('ALTER TABLE bookmarks ADD COLUMN last_opened_at TEXT');
+  }
+
+  if (!columnExists(db, 'bookmarks', 'open_count')) {
+    db.exec('ALTER TABLE bookmarks ADD COLUMN open_count INTEGER NOT NULL DEFAULT 0');
+  }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_is_favorite ON bookmarks(is_favorite);
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_pin_order ON bookmarks(pin_order);
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_last_opened_at ON bookmarks(last_opened_at);
+  `);
+}
+
+function migrateEventTitleColumn(db) {
+  if (!columnExists(db, 'events', 'title')) {
+    db.exec('ALTER TABLE events ADD COLUMN title TEXT');
+  }
+}
+
 export function runMigrations(db) {
   db.exec(SCHEMA_SQL);
   migrateBookmarkStatusConstraint(db);
+  migrateBookmarkDashboardColumns(db);
+  migrateEventTitleColumn(db);
 }
