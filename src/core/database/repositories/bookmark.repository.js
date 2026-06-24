@@ -1,4 +1,5 @@
 import { generateId } from '../../../shared/utils/id.js';
+import { buildBookmarkQuery } from '../../bookmarks/bookmark-query.js';
 import { nowIso, parseJson, toJson } from '../utils.js';
 
 function mapBookmarkRow(row) {
@@ -17,7 +18,6 @@ function mapBookmarkRow(row) {
     lastChecked: row.last_checked,
     lastStatus: row.last_status,
     isFavorite: Boolean(row.is_favorite),
-    pinOrder: row.pin_order ?? null,
     lastOpenedAt: row.last_opened_at ?? null,
     openCount: row.open_count ?? 0,
   };
@@ -67,10 +67,10 @@ export class BookmarkRepository {
     const insert = this.db.prepare(`
       INSERT INTO bookmarks (
         id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status,
-        is_favorite, pin_order, last_opened_at, open_count
+        is_favorite, last_opened_at, open_count
       ) VALUES (
         @id, @url, @title, @type, @folderId, @thumbnail, @createdAt, @lastChecked, @lastStatus,
-        @isFavorite, @pinOrder, @lastOpenedAt, @openCount
+        @isFavorite, @lastOpenedAt, @openCount
       )
     `);
 
@@ -86,7 +86,6 @@ export class BookmarkRepository {
         lastChecked: data.lastChecked ?? null,
         lastStatus: data.lastStatus ?? 'ok',
         isFavorite: data.isFavorite ? 1 : 0,
-        pinOrder: data.pinOrder ?? null,
         lastOpenedAt: data.lastOpenedAt ?? null,
         openCount: data.openCount ?? 0,
       });
@@ -144,16 +143,22 @@ export class BookmarkRepository {
     return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
   }
 
-  getPinnedBookmarks() {
-    const rows = this.db
-      .prepare(`
-        SELECT * FROM bookmarks
-        WHERE pin_order IS NOT NULL
-        ORDER BY pin_order ASC, created_at DESC
-      `)
-      .all();
+  queryBookmarks(filters = {}) {
+    const { countSql, selectSql, params } = buildBookmarkQuery(filters);
 
-    return rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+    const totalRow = this.db.prepare(countSql).get(params);
+    const total = totalRow?.total ?? 0;
+
+    const rows = this.db.prepare(selectSql).all(params);
+    const items = rows.map((row) => this.#attachTags(mapBookmarkRow(row)));
+
+    return {
+      items,
+      total,
+      offset: params.offset,
+      limit: params.limit,
+      hasMore: params.offset + items.length < total,
+    };
   }
 
   recordOpen(id) {
@@ -217,10 +222,6 @@ export class BookmarkRepository {
     if (input.isFavorite !== undefined) {
       fields.push('is_favorite = @isFavorite');
       params.isFavorite = input.isFavorite ? 1 : 0;
-    }
-    if (input.pinOrder !== undefined) {
-      fields.push('pin_order = @pinOrder');
-      params.pinOrder = input.pinOrder;
     }
     if (input.lastOpenedAt !== undefined) {
       fields.push('last_opened_at = @lastOpenedAt');

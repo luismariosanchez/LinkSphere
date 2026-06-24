@@ -9,6 +9,7 @@ function mapFolderRow(row) {
     id: row.id,
     name: row.name,
     parentId: row.parent_id,
+    pinOrder: row.pin_order ?? null,
   };
 }
 
@@ -22,13 +23,14 @@ export class FolderRepository {
 
     this.db
       .prepare(`
-        INSERT INTO folders (id, name, parent_id)
-        VALUES (@id, @name, @parentId)
+        INSERT INTO folders (id, name, parent_id, pin_order)
+        VALUES (@id, @name, @parentId, @pinOrder)
       `)
       .run({
         id,
         name: input.name,
         parentId: input.parentId ?? null,
+        pinOrder: input.pinOrder ?? null,
       });
 
     return this.getById(id);
@@ -60,6 +62,10 @@ export class FolderRepository {
     if (input.parentId !== undefined) {
       fields.push('parent_id = @parentId');
       params.parentId = input.parentId;
+    }
+    if (input.pinOrder !== undefined) {
+      fields.push('pin_order = @pinOrder');
+      params.pinOrder = input.pinOrder;
     }
 
     if (fields.length === 0) {
@@ -106,6 +112,75 @@ export class FolderRepository {
 
   getFolders() {
     return this.getAll();
+  }
+
+  getPinnedFolders() {
+    const rows = this.db
+      .prepare(`
+        SELECT * FROM folders
+        WHERE pin_order IS NOT NULL
+        ORDER BY pin_order ASC, name COLLATE NOCASE ASC
+      `)
+      .all();
+
+    return rows.map(mapFolderRow);
+  }
+
+  #mapStatsRow(row) {
+    return {
+      bookmarkCount: row.bookmark_count ?? 0,
+      favoritesCount: row.favorites_count ?? 0,
+      pinnedCount: row.pin_order != null ? 1 : 0,
+    };
+  }
+
+  getAllWithStats() {
+    const rows = this.db
+      .prepare(`
+        SELECT
+          f.id,
+          f.name,
+          f.parent_id,
+          f.pin_order,
+          COUNT(b.id) AS bookmark_count,
+          COALESCE(SUM(CASE WHEN b.is_favorite = 1 THEN 1 ELSE 0 END), 0) AS favorites_count
+        FROM folders f
+        LEFT JOIN bookmarks b ON b.folder_id = f.id
+        GROUP BY f.id
+        ORDER BY f.name COLLATE NOCASE ASC
+      `)
+      .all();
+
+    return rows.map((row) => ({
+      ...mapFolderRow(row),
+      stats: this.#mapStatsRow(row),
+    }));
+  }
+
+  getFolderStats(folderId) {
+    const folder = this.getById(folderId);
+
+    if (!folder) {
+      return null;
+    }
+
+    const row = this.db
+      .prepare(`
+        SELECT
+          COUNT(b.id) AS bookmark_count,
+          COALESCE(SUM(CASE WHEN b.is_favorite = 1 THEN 1 ELSE 0 END), 0) AS favorites_count
+        FROM bookmarks b
+        WHERE b.folder_id = @folderId
+      `)
+      .get({ folderId });
+
+    return {
+      folderId,
+      bookmarkCount: row?.bookmark_count ?? 0,
+      favoritesCount: row?.favorites_count ?? 0,
+      pinnedCount: folder.pinOrder != null ? 1 : 0,
+      isPinned: folder.pinOrder != null,
+    };
   }
 
   updateFolder(id, input) {

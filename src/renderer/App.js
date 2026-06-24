@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Dashboard } from './pages/Dashboard.js';
+import { FoldersView } from './pages/FoldersView.js';
 import { Settings } from './pages/Settings.js';
 import { Sidebar } from './components/Sidebar.js';
 
@@ -40,12 +41,16 @@ export function App() {
 
       <div className="app__main scrollbar-hidden">
         {view === 'dashboard' ? (
-          <Dashboard
-            refreshKey={dashboardRefreshKey}
-            dashboardMode={dashboardMode}
-            onDashboardModeChange={setDashboardMode}
-            onRegisterCreate={registerCreate}
-          />
+          dashboardMode === 'folders' ? (
+            <FoldersView refreshKey={dashboardRefreshKey} />
+          ) : (
+            <Dashboard
+              refreshKey={dashboardRefreshKey}
+              dashboardMode={dashboardMode}
+              onDashboardModeChange={setDashboardMode}
+              onRegisterCreate={registerCreate}
+            />
+          )
         ) : (
           <Settings onDataChanged={refreshDashboard} />
         )}

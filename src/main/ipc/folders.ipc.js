@@ -4,6 +4,10 @@ import { getFolderService } from '../database/context.js';
 
 const FOLDER_HANDLERS = [
   IPC_CHANNELS.FOLDERS_GET_ALL,
+  IPC_CHANNELS.FOLDERS_GET_ALL_WITH_STATS,
+  IPC_CHANNELS.FOLDERS_GET_BY_ID,
+  IPC_CHANNELS.FOLDERS_GET_STATS,
+  IPC_CHANNELS.FOLDERS_GET_PINNED,
   IPC_CHANNELS.FOLDERS_CREATE,
   IPC_CHANNELS.FOLDERS_UPDATE,
   IPC_CHANNELS.FOLDERS_DELETE,
@@ -16,7 +20,23 @@ export function registerFoldersIpcHandlers() {
   }
 
   ipcMain.handle(IPC_CHANNELS.FOLDERS_GET_ALL, () => {
-    return getFolderService().getFolders();
+    return getFolderService().getAllFolders();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FOLDERS_GET_ALL_WITH_STATS, () => {
+    return getFolderService().getAllFoldersWithStats();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FOLDERS_GET_BY_ID, (_event, id) => {
+    return getFolderService().getFolderById(id);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FOLDERS_GET_STATS, (_event, folderId) => {
+    return getFolderService().getFolderStats(folderId);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FOLDERS_GET_PINNED, () => {
+    return getFolderService().getPinnedFolders();
   });
 
   ipcMain.handle(IPC_CHANNELS.FOLDERS_CREATE, (_event, input) => {

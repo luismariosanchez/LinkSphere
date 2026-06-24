@@ -24,7 +24,12 @@ const api = {
     delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_DELETE, id),
     getRecent: (limit) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_GET_RECENT, limit),
     getFavorites: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_GET_FAVORITES),
-    getPinned: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_GET_PINNED),
+    query: (filters) => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_QUERY, filters),
+    getByFolder: (folderId, options) => ipcRenderer.invoke(
+      IPC_CHANNELS.BOOKMARKS_GET_BY_FOLDER,
+      folderId,
+      options,
+    ),
     exportToFile: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_EXPORT),
     importFromFile: () => ipcRenderer.invoke(IPC_CHANNELS.BOOKMARKS_IMPORT),
     onImportProgress: (callback) => {
@@ -51,6 +56,10 @@ const api = {
 
   folders: {
     getAll: () => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_GET_ALL),
+    getAllWithStats: () => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_GET_ALL_WITH_STATS),
+    getById: (id) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_GET_BY_ID, id),
+    getStats: (folderId) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_GET_STATS, folderId),
+    getPinned: () => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_GET_PINNED),
     create: (input) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_CREATE, input),
     update: (id, input) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_UPDATE, id, input),
     delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.FOLDERS_DELETE, id),

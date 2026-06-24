@@ -2,7 +2,8 @@ const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS folders (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  parent_id TEXT REFERENCES folders(id) ON DELETE SET NULL
+  parent_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
+  pin_order INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS bookmarks (
@@ -18,7 +19,6 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   last_status TEXT NOT NULL DEFAULT 'ok'
     CHECK(last_status IN ('ok', 'dead', 'error', 'live', 'offline', 'unknown')),
   is_favorite INTEGER NOT NULL DEFAULT 0,
-  pin_order INTEGER,
   last_opened_at TEXT,
   open_count INTEGER NOT NULL DEFAULT 0
 );
@@ -86,18 +86,17 @@ function migrateBookmarkStatusConstraint(db) {
       last_status TEXT NOT NULL DEFAULT 'ok'
         CHECK(last_status IN ${BOOKMARK_STATUS_CHECK}),
       is_favorite INTEGER NOT NULL DEFAULT 0,
-      pin_order INTEGER,
       last_opened_at TEXT,
       open_count INTEGER NOT NULL DEFAULT 0
     );
 
     INSERT INTO bookmarks_migrated (
       id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status,
-      is_favorite, pin_order, last_opened_at, open_count
+      is_favorite, last_opened_at, open_count
     )
     SELECT
       id, url, title, type, folder_id, thumbnail, created_at, last_checked, last_status,
-      0, NULL, NULL, 0
+      0, NULL, 0
     FROM bookmarks;
 
     DROP TABLE bookmarks;
@@ -121,10 +120,6 @@ function migrateBookmarkDashboardColumns(db) {
     db.exec('ALTER TABLE bookmarks ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0');
   }
 
-  if (!columnExists(db, 'bookmarks', 'pin_order')) {
-    db.exec('ALTER TABLE bookmarks ADD COLUMN pin_order INTEGER');
-  }
-
   if (!columnExists(db, 'bookmarks', 'last_opened_at')) {
     db.exec('ALTER TABLE bookmarks ADD COLUMN last_opened_at TEXT');
   }
@@ -135,9 +130,22 @@ function migrateBookmarkDashboardColumns(db) {
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_bookmarks_is_favorite ON bookmarks(is_favorite);
-    CREATE INDEX IF NOT EXISTS idx_bookmarks_pin_order ON bookmarks(pin_order);
     CREATE INDEX IF NOT EXISTS idx_bookmarks_last_opened_at ON bookmarks(last_opened_at);
   `);
+}
+
+function migrateFolderPinColumn(db) {
+  if (!columnExists(db, 'folders', 'pin_order')) {
+    db.exec('ALTER TABLE folders ADD COLUMN pin_order INTEGER');
+  }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_folders_pin_order ON folders(pin_order);
+  `);
+
+  if (columnExists(db, 'bookmarks', 'pin_order')) {
+    db.exec('UPDATE bookmarks SET pin_order = NULL WHERE pin_order IS NOT NULL');
+  }
 }
 
 function migrateEventTitleColumn(db) {
@@ -150,5 +158,6 @@ export function runMigrations(db) {
   db.exec(SCHEMA_SQL);
   migrateBookmarkStatusConstraint(db);
   migrateBookmarkDashboardColumns(db);
+  migrateFolderPinColumn(db);
   migrateEventTitleColumn(db);
 }

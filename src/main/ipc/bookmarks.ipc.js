@@ -44,8 +44,12 @@ export function registerBookmarksIpcHandlers() {
     return getBookmarkService().getFavoriteBookmarks();
   });
 
-  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_PINNED, () => {
-    return getBookmarkService().getPinnedBookmarks();
+  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_QUERY, (_event, filters) => {
+    return getBookmarkService().queryBookmarks(filters);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BOOKMARKS_GET_BY_FOLDER, (_event, folderId, options) => {
+    return getBookmarkService().getBookmarksByFolder(folderId, options);
   });
 
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS_EXPORT, async (event) => {

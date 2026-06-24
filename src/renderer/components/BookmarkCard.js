@@ -2,7 +2,7 @@ import { useState } from 'react';
 import folderIcon from '../assets/icons/folder_in_bookmark_card_icon.svg';
 import internetIcon from '../assets/icons/internet-svgrepo-com.svg';
 import { TagChip } from './TagChip.js';
-import { getTypeLabel } from '../utils/bookmarks.js';
+import { getStatusLabel, getTypeLabel } from '../utils/bookmarks.js';
 import { resolveCardBadge } from '../utils/news.js';
 
 function BookmarkCardThumbnail({ thumbnail }) {
@@ -28,9 +28,11 @@ function BookmarkCardThumbnail({ thumbnail }) {
   );
 }
 
-export function BookmarkCard({  bookmark,
+export function BookmarkCard({
+  bookmark,
   tags,
   folderName,
+  isFolderPinned = false,
   lastEvent,
   onOpen,
   onEdit,
@@ -39,9 +41,11 @@ export function BookmarkCard({  bookmark,
   const badge = resolveCardBadge(bookmark, lastEvent);
   const isDown = bookmark.lastStatus === 'dead' || bookmark.lastStatus === 'error';
   const tagLabel = tags[0]?.name ?? getTypeLabel(bookmark.type);
+  const providerLabel = getTypeLabel(bookmark.type);
+  const statusLabel = getStatusLabel(bookmark.lastStatus);
 
   function handleCardClick() {
-    onOpen?.(bookmark.url);
+    onOpen?.(bookmark);
   }
 
   return (
@@ -54,6 +58,7 @@ export function BookmarkCard({  bookmark,
       }}
       role="button"
       tabIndex={0}
+      title={bookmark.url}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
@@ -64,7 +69,21 @@ export function BookmarkCard({  bookmark,
       <div className="bookmark-card__thumb-wrap">
         <BookmarkCardThumbnail thumbnail={bookmark.thumbnail} />
 
-        {isDown ? (          <div className="bookmark-card__overlay bookmark-card__overlay--down">
+        <div className="bookmark-card__flags" aria-hidden="true">
+          {bookmark.isFavorite && (
+            <span className="bookmark-card__flag bookmark-card__flag--favorite" title="Favorito">
+              ★
+            </span>
+          )}
+          {isFolderPinned && (
+            <span className="bookmark-card__flag bookmark-card__flag--pinned" title="Carpeta anclada">
+              📌
+            </span>
+          )}
+        </div>
+
+        {isDown ? (
+          <div className="bookmark-card__overlay bookmark-card__overlay--down">
             <span className="bookmark-card__overlay-text">Web caída</span>
           </div>
         ) : badge ? (
@@ -83,6 +102,15 @@ export function BookmarkCard({  bookmark,
             <span className="bookmark-card__folder-name">{folderName}</span>
           </p>
         )}
+
+        <div className="bookmark-card__meta">
+          <span className="bookmark-card__provider">{providerLabel}</span>
+          {!isDown && (
+            <span className={`bookmark-card__status bookmark-card__status--${bookmark.lastStatus}`}>
+              {statusLabel}
+            </span>
+          )}
+        </div>
 
         <TagChip label={tagLabel} />
       </div>

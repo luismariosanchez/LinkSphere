@@ -1,7 +1,7 @@
 import searchIcon from '../assets/icons/search_icon.svg';
 import filtersIcon from '../assets/icons/filters icon.svg';
 
-export function DashboardHeader({ query, onQueryChange }) {
+export function DashboardHeader({ query, onQueryChange, onFiltersClick, filtersActive = false }) {
   return (
     <header className="dashboard-header">
       <div className="dashboard-header__search">
@@ -15,12 +15,15 @@ export function DashboardHeader({ query, onQueryChange }) {
         />
       </div>
 
-      {/* TODO: panel de filtros avanzados — diseño pendiente */}
       <button
         type="button"
-        className="dashboard-header__filters-btn"
+        className={filtersActive
+          ? 'dashboard-header__filters-btn dashboard-header__filters-btn--active'
+          : 'dashboard-header__filters-btn'}
         aria-label="Filtros"
-        title="Filtros (próximamente)"
+        aria-pressed={filtersActive}
+        title="Filtros"
+        onClick={onFiltersClick}
       >
         <img src={filtersIcon} alt="" className="dashboard-header__filters-icon" />
       </button>

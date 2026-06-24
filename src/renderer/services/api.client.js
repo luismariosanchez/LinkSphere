@@ -68,8 +68,12 @@ export const apiClient = {
       return getApi().bookmarks.getFavorites();
     },
 
-    getPinned() {
-      return getApi().bookmarks.getPinned();
+    query(filters) {
+      return getApi().bookmarks.query(filters);
+    },
+
+    getByFolder(folderId, options) {
+      return getApi().bookmarks.getByFolder(folderId, options);
     },
 
     exportToFile() {
@@ -134,8 +138,24 @@ export const apiClient = {
       }
     },
 
+    getAllWithStats() {
+      return getApi().folders.getAllWithStats();
+    },
+
+    getById(id) {
+      return getApi().folders.getById(id);
+    },
+
+    getStats(folderId) {
+      return getApi().folders.getStats(folderId);
+    },
+
     create(input) {
       return getApi().folders.create(input);
+    },
+
+    getPinned() {
+      return getApi().folders.getPinned();
     },
 
     update(id, input) {

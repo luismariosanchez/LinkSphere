@@ -18,7 +18,8 @@ export const IPC_CHANNELS = {
   BOOKMARKS_IMPORT_PROGRESS: 'bookmarks:importProgress',
   BOOKMARKS_GET_RECENT: 'bookmarks:getRecent',
   BOOKMARKS_GET_FAVORITES: 'bookmarks:getFavorites',
-  BOOKMARKS_GET_PINNED: 'bookmarks:getPinned',
+  BOOKMARKS_QUERY: 'bookmarks:query',
+  BOOKMARKS_GET_BY_FOLDER: 'bookmarks:getByFolder',
 
   EVENTS_GET_ALL: 'events:getAll',
   EVENTS_GET_BY_BOOKMARK_ID: 'events:getByBookmarkId',
@@ -30,6 +31,10 @@ export const IPC_CHANNELS = {
   TAGS_GET_BY_BOOKMARK_ID: 'tags:getByBookmarkId',
 
   FOLDERS_GET_ALL: 'folders:getAll',
+  FOLDERS_GET_ALL_WITH_STATS: 'folders:getAllWithStats',
+  FOLDERS_GET_BY_ID: 'folders:getById',
+  FOLDERS_GET_STATS: 'folders:getStats',
+  FOLDERS_GET_PINNED: 'folders:getPinned',
   FOLDERS_CREATE: 'folders:create',
   FOLDERS_UPDATE: 'folders:update',
   FOLDERS_DELETE: 'folders:delete',

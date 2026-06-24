@@ -7,20 +7,25 @@ export function BookmarkGrid({
   tags,
   folders,
   onEdit,
+  onOpen,
 }) {
   const tagMap = buildTagMap(tags);
-  const folderMap = Object.fromEntries(folders.map((f) => [f.id, f.name]));
+  const folderMap = Object.fromEntries(folders.map((folder) => [folder.id, folder]));
+  const pinnedFolderIds = new Set(
+    folders.filter((folder) => folder.pinOrder != null).map((folder) => folder.id),
+  );
 
-  function handleOpen(url) {
-    void apiClient.app.openExternal(url);
+  function handleOpen(bookmark) {
+    if (onOpen) {
+      onOpen(bookmark);
+      return;
+    }
+
+    void apiClient.app.openExternal(bookmark.url);
   }
 
   if (bookmarks.length === 0) {
-    return (
-      <div className="empty-state empty-state--dark">
-        <p className="muted">No hay bookmarks que coincidan.</p>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -30,7 +35,8 @@ export function BookmarkGrid({
           key={bookmark.id}
           bookmark={bookmark}
           tags={resolveBookmarkTags(bookmark, tagMap)}
-          folderName={bookmark.folderId ? folderMap[bookmark.folderId] : null}
+          folderName={bookmark.folderId ? folderMap[bookmark.folderId]?.name : null}
+          isFolderPinned={bookmark.folderId ? pinnedFolderIds.has(bookmark.folderId) : false}
           onOpen={handleOpen}
           onEdit={onEdit}
         />

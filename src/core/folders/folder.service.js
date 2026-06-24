@@ -14,6 +14,26 @@ export class FolderService {
     return this.foldersRepo.getFolders();
   }
 
+  getAllFolders() {
+    return this.getFolders();
+  }
+
+  getFolderById(id) {
+    return this.foldersRepo.getById(id);
+  }
+
+  getAllFoldersWithStats() {
+    return this.foldersRepo.getAllWithStats();
+  }
+
+  getFolderStats(folderId) {
+    return this.foldersRepo.getFolderStats(folderId);
+  }
+
+  getPinnedFolders() {
+    return this.foldersRepo.getPinnedFolders();
+  }
+
   updateFolder(id, input) {
     return this.foldersRepo.updateFolder(id, input);
   }
