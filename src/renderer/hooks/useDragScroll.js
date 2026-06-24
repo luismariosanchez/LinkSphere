@@ -1,9 +1,12 @@
 import { useCallback, useRef } from 'react';
 
+const DRAG_THRESHOLD_PX = 5;
+
 export function useDragScroll() {
   const ref = useRef(null);
   const dragState = useRef({
     isActive: false,
+    hasDragged: false,
     startX: 0,
     scrollLeft: 0,
   });
@@ -30,25 +33,46 @@ export function useDragScroll() {
 
     dragState.current = {
       isActive: true,
+      hasDragged: false,
       startX: event.pageX,
       scrollLeft: element.scrollLeft,
     };
 
-    element.classList.add('is-dragging');
-
     function onMouseMove(moveEvent) {
-      const { isActive, startX, scrollLeft } = dragState.current;
+      const state = dragState.current;
 
-      if (!isActive) {
+      if (!state.isActive) {
         return;
       }
 
+      const deltaX = moveEvent.pageX - state.startX;
+
+      if (!state.hasDragged) {
+        if (Math.abs(deltaX) < DRAG_THRESHOLD_PX) {
+          return;
+        }
+
+        state.hasDragged = true;
+        element.classList.add('is-dragging');
+      }
+
       moveEvent.preventDefault();
-      element.scrollLeft = scrollLeft - (moveEvent.pageX - startX);
+      element.scrollLeft = state.scrollLeft - deltaX;
     }
 
     function onMouseUp() {
+      const hadDragged = dragState.current.hasDragged;
       endDrag();
+
+      if (hadDragged) {
+        function suppressClick(clickEvent) {
+          clickEvent.preventDefault();
+          clickEvent.stopPropagation();
+          element.removeEventListener('click', suppressClick, true);
+        }
+
+        element.addEventListener('click', suppressClick, true);
+      }
     }
 
     cleanupListeners.current = () => {

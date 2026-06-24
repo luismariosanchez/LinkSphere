@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from '../services/api.client.js';
-import { AddBookmark } from '../components/AddBookmark.js';
 import { BookmarkEditor } from '../components/BookmarkEditor.js';
 import { BookmarkList } from '../components/BookmarkList.js';
 import { DashboardHeader } from '../components/DashboardHeader.js';
@@ -11,6 +10,7 @@ import { LoadingState } from '../components/LoadingState.js';
 import { NewsCarousel } from '../components/NewsCarousel.js';
 import { QuickAccessFolders } from '../components/QuickAccessFolders.js';
 import { SearchBar } from '../components/SearchBar.js';
+import { useBookmarkActions } from '../hooks/useBookmarkActions.js';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const BOOKMARKS_PAGE_SIZE = 50;
@@ -61,7 +61,6 @@ export function Dashboard({
   refreshKey = 0,
   dashboardMode = 'dashboard',
   onDashboardModeChange,
-  onRegisterCreate,
 }) {
   const isBookmarksView = dashboardMode === 'bookmarks';
   const lastViewModeRef = useRef('dashboard');
@@ -80,7 +79,6 @@ export function Dashboard({
   const [editingId, setEditingId] = useState(null);
   const [selectedFolderId, setSelectedFolderId] = useState('all');
   const [folderPanelOpen, setFolderPanelOpen] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
   const skipFilterReloadRef = useRef(true);
 
   const [gridFilter, setGridFilter] = useState('recent');
@@ -168,10 +166,6 @@ export function Dashboard({
   ]);
 
   useEffect(() => {
-    onRegisterCreate?.(() => setShowAddForm(true));
-  }, [onRegisterCreate]);
-
-  useEffect(() => {
     skipFilterReloadRef.current = true;
     void loadDashboard().finally(() => {
       skipFilterReloadRef.current = false;
@@ -215,14 +209,14 @@ export function Dashboard({
     }
   }, [dashboardMode]);
 
-  function handleBookmarkCreated(created) {
-    void loadDashboard();
-    setEditingId(created.id);
-  }
-
   function handleSaved() {
     void loadDashboard();
   }
+
+  const bookmarkMenuActions = useBookmarkActions({
+    onEdit: (bookmark) => setEditingId(bookmark.id),
+    onChanged: handleSaved,
+  });
 
   function handleTagCreated(tag) {
     setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name)));
@@ -317,13 +311,6 @@ export function Dashboard({
         </>
       )}
 
-      <AddBookmark
-        open={showAddForm}
-        onClose={() => setShowAddForm(false)}
-        onCreated={handleBookmarkCreated}
-        onError={setError}
-      />
-
       {error && <p className="error">{error}</p>}
       {dashboardLoading && <LoadingState />}
 
@@ -340,6 +327,7 @@ export function Dashboard({
             items={newsItems}
             onOpen={handleOpenBookmark}
             onEdit={(bookmark) => setEditingId(bookmark.id)}
+            menuActions={bookmarkMenuActions}
           />
 
           <QuickAccessFolders
@@ -353,6 +341,7 @@ export function Dashboard({
               items={gridBookmarks}
               onEdit={(bookmark) => setEditingId(bookmark.id)}
               onOpen={handleOpenBookmark}
+              menuActions={bookmarkMenuActions}
             />
           </section>
         </>
@@ -381,6 +370,7 @@ export function Dashboard({
                 items={bookmarksPage.items}
                 onEdit={(bookmark) => setEditingId(bookmark.id)}
                 onOpen={handleOpenBookmark}
+                menuActions={bookmarkMenuActions}
               />
 
               {bookmarksPage.hasMore && (

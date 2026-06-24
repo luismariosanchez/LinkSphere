@@ -1,6 +1,12 @@
 import { BookmarkCard } from './BookmarkCard.js';
 
-export function BookmarkList({ items, onEdit, onOpen, className = 'bookmark-grid--figma' }) {
+export function BookmarkList({
+  items,
+  onEdit,
+  onOpen,
+  menuActions = null,
+  className = 'bookmark-grid--figma',
+}) {
   if (!items?.length) {
     return null;
   }
@@ -21,6 +27,7 @@ export function BookmarkList({ items, onEdit, onOpen, className = 'bookmark-grid
           className={item.className}
           onOpen={onOpen}
           onEdit={onEdit}
+          menuActions={menuActions}
         />
       ))}
     </div>

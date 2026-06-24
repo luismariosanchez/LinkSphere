@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import folderIcon from '../assets/icons/folder_in_bookmark_card_icon.svg';
 import internetIcon from '../assets/icons/internet-svgrepo-com.svg';
+import { ContextMenu } from './ContextMenu.js';
 import { TagChip } from './TagChip.js';
 
 function BookmarkCardThumbnail({ thumbnail }) {
@@ -36,16 +37,54 @@ export function BookmarkCard({
   isDown = false,
   onOpen,
   onEdit,
+  menuActions = null,
   className = '',
 }) {
+  const [menuPosition, setMenuPosition] = useState(null);
+
   function handleCardClick() {
     onOpen?.(bookmark);
   }
+
+  function handleContextMenu(event) {
+    if (!menuActions) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    setMenuPosition({ x: event.clientX, y: event.clientY });
+  }
+
+  const contextMenuItems = menuActions ? [
+    {
+      id: 'edit',
+      label: 'Editar',
+      onClick: () => menuActions.edit(bookmark),
+    },
+    {
+      id: 'rescan',
+      label: 'Recargar',
+      onClick: () => menuActions.rescan(bookmark),
+    },
+    {
+      id: 'favorite',
+      label: bookmark.isFavorite ? 'Quitar favorito' : 'Añadir favorito',
+      onClick: () => menuActions.toggleFavorite(bookmark),
+    },
+    {
+      id: 'delete',
+      label: 'Eliminar',
+      danger: true,
+      onClick: () => menuActions.delete(bookmark),
+    },
+  ] : [];
 
   return (
     <article
       className={`bookmark-card${className ? ` ${className}` : ''}`}
       onClick={handleCardClick}
+      onContextMenu={handleContextMenu}
       onDoubleClick={(event) => {
         event.stopPropagation();
         onEdit?.(bookmark);
@@ -103,6 +142,15 @@ export function BookmarkCard({
           ))}
         </div>
       </div>
+
+      {menuPosition && (
+        <ContextMenu
+          x={menuPosition.x}
+          y={menuPosition.y}
+          items={contextMenuItems}
+          onClose={() => setMenuPosition(null)}
+        />
+      )}
     </article>
   );
 }

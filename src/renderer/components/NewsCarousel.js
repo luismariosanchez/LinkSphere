@@ -3,7 +3,7 @@ import { BookmarkCard } from './BookmarkCard.js';
 import { DashboardSection } from './DashboardSection.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 
-export function NewsCarousel({ items, onOpen, onEdit }) {
+export function NewsCarousel({ items, onOpen, onEdit, menuActions = null }) {
   const { ref, dragHandlers } = useDragScroll();
 
   if (items.length === 0) {
@@ -37,6 +37,7 @@ export function NewsCarousel({ items, onOpen, onEdit }) {
             isDown={card.isDown}
             onOpen={onOpen}
             onEdit={onEdit}
+            menuActions={menuActions}
           />
         ))}
       </div>
