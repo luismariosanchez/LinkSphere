@@ -1,4 +1,4 @@
-export class BookmarkProvider {
+export class BaseProvider {
   constructor(name) {
     this.name = name;
   }
@@ -11,3 +11,6 @@ export class BookmarkProvider {
     throw new Error(`${this.name}: enrich() no implementado`);
   }
 }
+
+/** @deprecated Use BaseProvider */
+export const BookmarkProvider = BaseProvider;

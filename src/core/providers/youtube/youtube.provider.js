@@ -1,13 +1,13 @@
-import { BookmarkProvider } from './provider.interface.js';
-import { detectYouTubeStreamInfo } from './utils/live-detector.js';
-import { fetchPageContent } from './utils/page-scraper.js';
-import { buildStreamExtra, isSiteReachable } from './utils/stream-status.js';
-import { extractYouTubeVideoId, normalizeUrl } from './utils/url.js';
+import { BaseProvider } from '../base.provider.js';
+import { detectYouTubeStreamInfo } from '../utils/live-detector.js';
+import { fetchPageContent } from '../utils/page-scraper.js';
+import { buildStreamExtra, isSiteReachable } from '../utils/stream-status.js';
+import { extractYouTubeVideoId, normalizeUrl } from '../utils/url.js';
 
 const YOUTUBE_HOST_RE = /(?:^|\.)youtube\.com$/i;
 const YOUTU_BE_RE = /youtu\.be/i;
 
-export class YouTubeProvider extends BookmarkProvider {
+export class YouTubeProvider extends BaseProvider {
   constructor() {
     super('youtube');
   }

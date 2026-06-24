@@ -25,7 +25,7 @@ import {
   ProcessorsRegistry,
   TagProcessor,
 } from '../../core/processors/index.js';
-import { ProviderManager } from '../../core/providers/provider-manager.js';
+import { ProviderManager } from '../../core/providers/index.js';
 import { SchedulerService } from '../../core/scheduler/scheduler.service.js';
 import { WatcherService } from '../../core/scheduler/watcher.service.js';
 import { EventService } from '../../core/events/index.js';

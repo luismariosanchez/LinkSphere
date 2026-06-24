@@ -1,12 +1,12 @@
-import { BookmarkProvider } from './provider.interface.js';
-import { detectTwitchStreamInfo } from './utils/live-detector.js';
-import { fetchPageContent } from './utils/page-scraper.js';
-import { buildStreamExtra, isSiteReachable } from './utils/stream-status.js';
-import { normalizeUrl } from './utils/url.js';
+import { BaseProvider } from '../base.provider.js';
+import { detectTwitchStreamInfo } from '../utils/live-detector.js';
+import { fetchPageContent } from '../utils/page-scraper.js';
+import { buildStreamExtra, isSiteReachable } from '../utils/stream-status.js';
+import { normalizeUrl } from '../utils/url.js';
 
 const TWITCH_HOST_RE = /(?:^|\.)twitch\.tv$/i;
 
-export class TwitchProvider extends BookmarkProvider {
+export class TwitchProvider extends BaseProvider {
   constructor() {
     super('twitch');
   }

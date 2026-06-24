@@ -1,9 +1,9 @@
-import { BookmarkProvider } from './provider.interface.js';
-import { scrapeMetaTags } from './utils/meta-scraper.js';
-import { isSiteReachable } from './utils/stream-status.js';
-import { normalizeUrl } from './utils/url.js';
+import { BaseProvider } from '../base.provider.js';
+import { scrapeMetaTags } from '../utils/meta-scraper.js';
+import { isSiteReachable } from '../utils/stream-status.js';
+import { normalizeUrl } from '../utils/url.js';
 
-export class GenericProvider extends BookmarkProvider {
+export class GenericProvider extends BaseProvider {
   constructor() {
     super('generic');
   }
